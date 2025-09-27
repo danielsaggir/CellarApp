@@ -130,13 +130,23 @@ app.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => {
     const wine = await prisma.wine.findUnique({ where: { id: wineId } });
     if (!wine) return res.status(404).json({ error: "Wine not found" });
 
-    const analysis = await aiAnalyzeWine(wine);
+    // ✅ נוודא תמיד שהשדה vintage הוא מספר
+    if (wine.vintage === null || wine.vintage === undefined) {
+      return res.status(400).json({ error: "Wine is missing a vintage year" });
+    }
+
+    const analysis = await aiAnalyzeWine({
+      ...wine,
+      vintage: wine.vintage as number, // 👈 כאן TS כבר רגוע
+    });
+
     res.json({ analysis });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "AI analysis failed" });
   }
 });
+
 
 // ================== OPENAI ==================
 app.post("/ai/pairing", async (req, res) => {
