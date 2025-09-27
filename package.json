@@ -1,0 +1,35 @@
+{
+  "name": "cellarapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fullstack Wine Cellar App (React Native client + Express/Prisma server + Postgres in Docker)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db": "docker-compose up -d",
+    "server": "cd server && npx ts-node-dev src/index.ts",
+    "client:ios": "cd client && npx react-native run-ios --simulator='iPhone 17 Pro Max'",
+    "wineapp:start": "concurrently \"npm run db\" \"npm run server\" \"npm run client:ios\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielsaggir/CellarApp.git"
+  },
+  "keywords": [
+    "react-native",
+    "express",
+    "prisma",
+    "postgres",
+    "docker",
+    "wine-cellar"
+  ],
+  "author": "Daniel Saggir",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danielsaggir/CellarApp/issues"
+  },
+  "homepage": "https://github.com/danielsaggir/CellarApp#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
