@@ -15,7 +15,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../App";
-import config from "./config"; // 👈 שימוש ב־config
+import config from "./config";
 
 type MyCellarScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -56,6 +56,7 @@ export default function MyCellar({ navigation }: Props) {
           return;
         }
 
+        // ✅ נתיב מסודר שמחזיר את היינות של המשתמש
         const res = await fetch(`${config.API_URL}/wines/my`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -93,6 +94,7 @@ export default function MyCellar({ navigation }: Props) {
         return;
       }
 
+      // ✅ נתיב חדש: /wines/analyze
       const res = await fetch(`${config.API_URL}/wines/analyze`, {
         method: "POST",
         headers: {
@@ -128,7 +130,6 @@ export default function MyCellar({ navigation }: Props) {
     return (
       <View style={styles.center}>
         <Text style={styles.emptyText}>No wines in your cellar yet 🍷</Text>
-        {/* כפתור להוספת יין */}
         <TouchableOpacity
           onPress={() => navigation.navigate("WineForm")}
           style={styles.addButton}
@@ -182,7 +183,6 @@ export default function MyCellar({ navigation }: Props) {
         )}
       />
 
-      {/* Floating + Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate("WineForm")}
@@ -190,7 +190,6 @@ export default function MyCellar({ navigation }: Props) {
         <Text style={styles.fabText}>＋</Text>
       </TouchableOpacity>
 
-      {/* Modal with wine details + AI insights */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -264,9 +263,15 @@ const styles = StyleSheet.create({
   },
   addButtonText: { color: "#fff", fontSize: 16 },
   list: { padding: 20 },
+  row: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   card: {
+    width: cardWidth,
     backgroundColor: "#fff",
-    padding: 15,
+    padding: 12,
     borderRadius: 12,
     marginBottom: 15,
     shadowColor: "#000",
@@ -280,16 +285,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   name: { fontSize: 12, fontWeight: "bold", marginTop: 6, textAlign: "center" },
-  vintage: { fontSize: 11, color: "#666" },
+  vintage: { fontSize: 11, color: "#666", textAlign: "center" },
   typeBadge: {
     marginTop: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+    alignSelf: "center",
   },
   typeText: { fontSize: 10, color: "#fff", fontWeight: "bold" },
 
-  // FAB (Floating Action Button)
   fab: {
     position: "absolute",
     bottom: 25,

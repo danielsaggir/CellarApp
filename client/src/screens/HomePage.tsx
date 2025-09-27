@@ -21,12 +21,10 @@ export default function HomePage({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* כפתור Logout קטן בפינה */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
 
-      {/* חצי מסך - MyCellar */}
       <TouchableOpacity
         style={[styles.half, { backgroundColor: "#2575fc" }]}
         onPress={() => navigation.navigate("MyCellar")}
@@ -34,7 +32,6 @@ export default function HomePage({ navigation }: Props) {
         <Text style={styles.halfText}>🍷 My Cellar</Text>
       </TouchableOpacity>
 
-      {/* חצי מסך - Pairing */}
       <TouchableOpacity
         style={[styles.half, { backgroundColor: "#6a11cb" }]}
         onPress={() => navigation.navigate("Pairing")}

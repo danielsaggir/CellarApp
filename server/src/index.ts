@@ -6,7 +6,7 @@ import { upload, uploadImageToS3 } from "./services/s3Service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { authenticateJWT, AuthRequest } from "./middleware/auth";
-import OpenAI from "openai";
+import { aiPairingForFood, aiAnalyzeWine } from "./services/aiService";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -14,33 +14,29 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// OpenAI init
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
-// Test route
 app.get("/", (_req, res) => {
   res.json({ message: "Wine Cellar — API OK 🍷" });
 });
 
 // ================== AUTH ==================
-
-// REGISTER
 app.post("/auth/register", async (req, res) => {
   const { email, password, name } = req.body;
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const exists = await prisma.user.findUnique({ where: { email } });
+    if (exists) return res.status(400).json({ error: "User already exists" });
+
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, name, passwordHash: hashedPassword },
+      data: { email, name, passwordHash },
+      select: { id: true, email: true, name: true, isAdmin: true },
     });
     res.json(user);
   } catch (err) {
-    res.status(400).json({ error: "User already exists" });
+    console.error(err);
+    res.status(400).json({ error: "Failed to register" });
   }
 });
 
-// LOGIN
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
@@ -52,44 +48,50 @@ app.post("/auth/login", async (req, res) => {
   const token = jwt.sign(
     { userId: user.id, email: user.email, isAdmin: user.isAdmin },
     process.env.JWT_SECRET!,
-    { expiresIn: "1h" }
+    { expiresIn: "2h" }
   );
-
   res.json({ token });
 });
 
-// ME
 app.get("/auth/me", authenticateJWT, async (req: AuthRequest, res) => {
-  if (!req.user) return res.sendStatus(401);
   const user = await prisma.user.findUnique({
-    where: { id: req.user.userId },
+    where: { id: req.user!.userId },
     select: { id: true, email: true, name: true, isAdmin: true },
   });
   res.json(user);
 });
 
 // ================== WINES ==================
-
-// Upload image + create wine
 app.post("/wines", authenticateJWT, upload.single("image"), async (req: AuthRequest, res) => {
   try {
-    let imageUrl = null;
+    let imageUrl: string | null = null;
     if (req.file) {
       imageUrl = await uploadImageToS3(req.file);
     }
+
     const { name, country, region, producer, vintage, type } = req.body;
+
+    // ✅ בדיקה לוודא שהשנה מספר תקין
+    const vintageNumber = parseInt(vintage, 10);
+    if (isNaN(vintageNumber)) {
+      return res.status(400).json({ error: "Vintage must be a valid number" });
+    }
+
+    const cleanType = String(type || "").toUpperCase() as any;
+
     const wine = await prisma.wine.create({
       data: {
         name,
         country,
-        region,
-        producer,
-        vintage: parseInt(vintage, 10),
-        type,
-        imageUrl,
+        region: region || null,
+        producer: producer || null,
+        vintage: vintageNumber,
+        type: cleanType,
+        imageUrl: imageUrl || null,
         users: { connect: { id: req.user!.userId } },
       },
     });
+
     res.json(wine);
   } catch (err) {
     console.error(err);
@@ -97,13 +99,19 @@ app.post("/wines", authenticateJWT, upload.single("image"), async (req: AuthRequ
   }
 });
 
-// List wines
 app.get("/wines", async (_req, res) => {
-  const wines = await prisma.wine.findMany();
+  const wines = await prisma.wine.findMany({ orderBy: { createdAt: "desc" } });
   res.json(wines);
 });
 
-// Delete wine (admin only)
+app.get("/wines/my", authenticateJWT, async (req: AuthRequest, res) => {
+  const wines = await prisma.wine.findMany({
+    where: { users: { some: { id: req.user!.userId } } },
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(wines);
+});
+
 app.delete("/wines/:id", authenticateJWT, async (req: AuthRequest, res) => {
   if (!req.user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
   const { id } = req.params;
@@ -115,16 +123,27 @@ app.delete("/wines/:id", authenticateJWT, async (req: AuthRequest, res) => {
   }
 });
 
+// ✅ ניתוח יין ע"י OpenAI
+app.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => {
+  try {
+    const { wineId } = req.body;
+    const wine = await prisma.wine.findUnique({ where: { id: wineId } });
+    if (!wine) return res.status(404).json({ error: "Wine not found" });
+
+    const analysis = await aiAnalyzeWine(wine);
+    res.json({ analysis });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "AI analysis failed" });
+  }
+});
+
 // ================== OPENAI ==================
 app.post("/ai/pairing", async (req, res) => {
   try {
     const { food } = req.body;
-    const response = await openai.responses.create({
-      model: "gpt-5-nano",
-      input: `Suggest a wine pairing for: ${food}`,
-      store: true,
-    });
-    res.json({ suggestion: response.output_text });
+    const suggestion = await aiPairingForFood(food);
+    res.json({ suggestion });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "AI request failed" });
