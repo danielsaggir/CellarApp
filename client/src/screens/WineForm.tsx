@@ -12,8 +12,14 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { launchImageLibrary, Asset } from "react-native-image-picker";
-import { Picker } from "@react-native-picker/picker";
+import { Dropdown } from "react-native-element-dropdown";
 import config from "./config";
+
+type WineTypeItem = {
+  label: string;
+  value: string;
+  color: string;
+};
 
 export default function WineForm() {
   const navigation = useNavigation();
@@ -26,6 +32,14 @@ export default function WineForm() {
   const [notes, setNotes] = useState("");
   const [image, setImage] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const wineTypes: WineTypeItem[] = [
+    { label: "🍷 Red", value: "RED", color: "#b71c1c" },
+    { label: "⚪ White", value: "WHITE", color: "#fbc02d" },
+    { label: "🌸 Rosé", value: "ROSE", color: "#ec407a" },
+    { label: "✨ Sparkling", value: "SPARKLING", color: "#0288d1" },
+    { label: "🍊 Orange", value: "ORANGE", color: "#f57c00" },
+  ];
 
   async function pickImage() {
     const result = await launchImageLibrary({
@@ -97,13 +111,40 @@ export default function WineForm() {
     }
   }
 
+  const renderItem = (item: WineTypeItem) => (
+    <View style={styles.dropdownItem}>
+      <View style={[styles.colorBadge, { backgroundColor: item.color }]} />
+      <Text style={styles.dropdownText}>{item.label}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Add a Wine 🍷</Text>
-      <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Country" value={country} onChangeText={setCountry} />
-      <TextInput style={styles.input} placeholder="Region" value={region} onChangeText={setRegion} />
-      <TextInput style={styles.input} placeholder="Producer" value={producer} onChangeText={setProducer} />
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Country"
+        value={country}
+        onChangeText={setCountry}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Region"
+        value={region}
+        onChangeText={setRegion}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Producer"
+        value={producer}
+        onChangeText={setProducer}
+      />
       <TextInput
         style={styles.input}
         placeholder="Vintage (year)"
@@ -113,14 +154,16 @@ export default function WineForm() {
       />
 
       <Text style={styles.label}>Type</Text>
-      <Picker selectedValue={type} onValueChange={(itemValue) => setType(itemValue)} style={styles.picker}>
-        <Picker.Item label="Select type..." value="" />
-        <Picker.Item label="Red" value="RED" />
-        <Picker.Item label="White" value="WHITE" />
-        <Picker.Item label="Rosé" value="ROSE" />
-        <Picker.Item label="Sparkling" value="SPARKLING" />
-        <Picker.Item label="Orange" value="ORANGE" />
-      </Picker>
+      <Dropdown
+        style={styles.dropdown}
+        data={wineTypes}
+        labelField="label"
+        valueField="value"
+        placeholder="Select type..."
+        value={type}
+        onChange={(item: WineTypeItem) => setType(item.value)}
+        renderItem={renderItem}
+      />
 
       <TextInput
         style={[styles.input, { height: 80 }]}
@@ -131,18 +174,31 @@ export default function WineForm() {
       />
 
       <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-        <Text style={styles.imagePickerText}>{image ? "Change Image" : "Pick an Image"}</Text>
+        <Text style={styles.imagePickerText}>
+          {image ? "Change Image" : "Pick an Image"}
+        </Text>
       </TouchableOpacity>
-      {image?.uri && <Image source={{ uri: image.uri }} style={styles.preview} />}
+      {image?.uri && (
+        <Image source={{ uri: image.uri }} style={styles.preview} />
+      )}
 
-      <Button title={loading ? "Saving..." : "Save Wine"} onPress={handleSubmit} disabled={loading} />
+      <Button
+        title={loading ? "Saving..." : "Save Wine"}
+        onPress={handleSubmit}
+        disabled={loading}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -151,7 +207,27 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   label: { fontSize: 16, marginBottom: 5, marginTop: 10 },
-  picker: { borderWidth: 1, borderColor: "#ccc", marginBottom: 10 },
+  dropdown: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    marginBottom: 10,
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  dropdownText: { fontSize: 14, color: "#333" },
+  colorBadge: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 8,
+  },
   imagePicker: {
     backgroundColor: "#2980b9",
     padding: 10,
@@ -160,5 +236,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   imagePickerText: { color: "#fff" },
-  preview: { width: 120, height: 160, marginBottom: 10, alignSelf: "center", borderRadius: 8 },
+  preview: {
+    width: 120,
+    height: 160,
+    marginBottom: 10,
+    alignSelf: "center",
+    borderRadius: 8,
+  },
 });
