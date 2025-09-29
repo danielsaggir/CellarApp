@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { launchImageLibrary, Asset } from "react-native-image-picker";
+import { Picker } from "@react-native-picker/picker";
 import config from "./config";
 
 export default function WineForm() {
@@ -20,6 +21,7 @@ export default function WineForm() {
   const [producer, setProducer] = useState("");
   const [vintage, setVintage] = useState("");
   const [type, setType] = useState("");
+  const [notes, setNotes] = useState("");
   const [image, setImage] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,7 +47,8 @@ export default function WineForm() {
       formData.append("region", region);
       formData.append("producer", producer);
       formData.append("vintage", vintage);
-      formData.append("type", type.toUpperCase());
+      formData.append("type", type);
+      formData.append("notes", notes);
 
       if (image?.uri) {
         const filename = image.fileName || `wine_${Date.now()}.jpg`;
@@ -58,7 +61,7 @@ export default function WineForm() {
 
       const res = await fetch(`${config.API_URL}/wines`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }, // אל תגדיר Content-Type ידנית עם boundary
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -74,6 +77,7 @@ export default function WineForm() {
       setProducer("");
       setVintage("");
       setType("");
+      setNotes("");
       setImage(null);
     } catch (err: any) {
       console.error(err);
@@ -91,7 +95,24 @@ export default function WineForm() {
       <TextInput style={styles.input} placeholder="Region" value={region} onChangeText={setRegion} />
       <TextInput style={styles.input} placeholder="Producer" value={producer} onChangeText={setProducer} />
       <TextInput style={styles.input} placeholder="Vintage (year)" keyboardType="numeric" value={vintage} onChangeText={setVintage} />
-      <TextInput style={styles.input} placeholder='Type (RED/WHITE/SPARKLING/ORANGE/ROSE)' value={type} onChangeText={setType} />
+
+      <Text style={styles.label}>Type</Text>
+      <Picker selectedValue={type} onValueChange={(itemValue) => setType(itemValue)} style={styles.picker}>
+        <Picker.Item label="Select type..." value="" />
+        <Picker.Item label="Red" value="RED" />
+        <Picker.Item label="White" value="WHITE" />
+        <Picker.Item label="Rosé" value="ROSE" />
+        <Picker.Item label="Sparkling" value="SPARKLING" />
+        <Picker.Item label="Orange" value="ORANGE" />
+      </Picker>
+
+      <TextInput
+        style={[styles.input, { height: 80 }]}
+        placeholder="Personal Notes"
+        value={notes}
+        onChangeText={setNotes}
+        multiline
+      />
 
       <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
         <Text style={styles.imagePickerText}>{image ? "Change Image" : "Pick an Image"}</Text>
@@ -113,6 +134,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
+  label: { fontSize: 16, marginBottom: 5, marginTop: 10 },
+  picker: { borderWidth: 1, borderColor: "#ccc", marginBottom: 10 },
   imagePicker: {
     backgroundColor: "#2980b9",
     padding: 10,

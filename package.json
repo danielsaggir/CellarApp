@@ -5,11 +5,13 @@
   "description": "Fullstack Wine Cellar App (React Native client + Express/Prisma server + Postgres in Docker)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "db": "docker-compose up -d",
+    "db:down": "docker-compose down",
     "server": "cd server && npx ts-node-dev src/index.ts",
+    "client:start": "cd client && npx react-native start",
     "client:ios": "cd client && npx react-native run-ios --simulator='iPhone 17 Pro Max'",
-    "wineapp:start": "concurrently \"npm run db\" \"npm run server\" \"npm run client:ios\""
+    "client:android": "cd client && npx react-native run-android",
+    "wineapp": "concurrently \"npm run db\" \"npm run server\" \"npm run client:start\" \"npm run client:ios\""
   },
   "repository": {
     "type": "git",
@@ -30,6 +32,7 @@
   },
   "homepage": "https://github.com/danielsaggir/CellarApp#readme",
   "devDependencies": {
+    "@react-native-community/cli": "^20.0.2",
     "concurrently": "^9.2.1"
   }
 }

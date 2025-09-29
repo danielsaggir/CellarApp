@@ -19,16 +19,19 @@ model User {
 }
 
 model Wine {
-  id        String   @id @default(uuid())
-  name      String
-  type      WineType
-  country   String
-  region    String?
-  producer  String?
-  vintage   Int?
-  imageUrl  String?    // 🔹 URL/נתיב לתמונה
-  createdAt DateTime @default(now())
-  users     User[]   @relation("UserWines")
+  id          String   @id @default(uuid())
+  name        String
+  type        WineType
+  country     String
+  region      String?
+  producer    String?
+  vintage     Int?
+  imageUrl    String?
+  notes       String?    // 👈 הערות אישיות
+  drinkWindow String?    // 👈 חלון שתייה (ע"י AI)
+  marketValue String?    // 👈 שווי שוק (ע"י AI)
+  createdAt   DateTime @default(now())
+  users       User[]   @relation("UserWines")
 }
 
 enum WineType {
