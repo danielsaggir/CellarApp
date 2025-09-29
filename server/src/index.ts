@@ -75,7 +75,6 @@ app.post(
 
       const { name, country, region, producer, vintage, type, notes } = req.body;
 
-      // ✅ ולידציה מפורטת
       if (!name || name.trim() === "") {
         return res.status(400).json({ error: "Wine name is required" });
       }
@@ -100,9 +99,7 @@ app.post(
       if (vintage) {
         vintageNumber = parseInt(vintage, 10);
         if (isNaN(vintageNumber)) {
-          return res
-            .status(400)
-            .json({ error: "Vintage must be a valid number" });
+          return res.status(400).json({ error: "Vintage must be a valid number" });
         }
       }
 
@@ -125,9 +122,7 @@ app.post(
       res.json(wine);
     } catch (err: any) {
       console.error("Wine creation error:", err);
-      res
-        .status(500)
-        .json({ error: err.message || "Failed to create wine" });
+      res.status(500).json({ error: err.message || "Failed to create wine" });
     }
   }
 );
@@ -146,8 +141,7 @@ app.get("/wines/my", authenticateJWT, async (req: AuthRequest, res) => {
 });
 
 app.delete("/wines/:id", authenticateJWT, async (req: AuthRequest, res) => {
-  if (!req.user?.isAdmin)
-    return res.status(403).json({ error: "Forbidden" });
+  if (!req.user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
   const { id } = req.params;
   try {
     await prisma.wine.delete({ where: { id } });
@@ -165,9 +159,7 @@ app.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => {
     if (!wine) return res.status(404).json({ error: "Wine not found" });
 
     if (wine.vintage === null || wine.vintage === undefined) {
-      return res
-        .status(400)
-        .json({ error: "Wine is missing a vintage year" });
+      return res.status(400).json({ error: "Wine is missing a vintage year" });
     }
 
     const analysis = await aiAnalyzeWine({
@@ -175,44 +167,19 @@ app.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => {
       vintage: wine.vintage as number,
     });
 
-    res.json({ analysis });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "AI analysis failed" });
-  }
-});
-
-// ================== AI ENRICHMENT ==================
-app.post("/wines/enrich", authenticateJWT, async (req: AuthRequest, res) => {
-  try {
-    const { wineId } = req.body;
-
-    const wine = await prisma.wine.findUnique({ where: { id: wineId } });
-    if (!wine) return res.status(404).json({ error: "Wine not found" });
-
-    if (!wine.name || !wine.type || !wine.country) {
-      return res.status(400).json({
-        error: "Wine must have at least name, type and country to enrich data",
-      });
-    }
-
-    const enrichment = await aiAnalyzeWine({
-      ...wine,
-      vintage: wine.vintage ?? undefined,
-    });
-
+    // 🔑 עדכון היין ב־DB
     const updatedWine = await prisma.wine.update({
       where: { id: wineId },
       data: {
-        drinkWindow: enrichment.drinkWindow || null,
-        marketValue: enrichment.marketValue || null,
+        drinkWindow: analysis.drinkWindow || null,
+        marketValue: analysis.marketValue || null,
       },
     });
 
     res.json(updatedWine);
-  } catch (err: any) {
-    console.error("Wine enrichment error:", err);
-    res.status(500).json({ error: err.message || "AI enrichment failed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "AI analysis failed" });
   }
 });
 

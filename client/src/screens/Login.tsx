@@ -9,11 +9,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import config from "./config";
 
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, "Login">;
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 type Props = { navigation: LoginScreenNavigationProp };
 
 export default function Login({ navigation }: Props) {
@@ -30,14 +30,17 @@ export default function Login({ navigation }: Props) {
         body: JSON.stringify({ email, password }),
       });
 
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Login failed");
+        throw new Error(data?.error || `Login failed (HTTP ${res.status})`);
       }
 
-      const data = await res.json();
       await AsyncStorage.setItem("token", data.token);
-      navigation.reset({ index: 0, routes: [{ name: "HomePage" }] });
+      navigation.reset({ index: 0, routes: [{ name: "HomePage" as const }] });
     } catch (err: any) {
       Alert.alert("Error", err.message || "Login failed");
     } finally {

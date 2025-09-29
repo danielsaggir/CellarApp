@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "HomePage">;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "HomePage">;
 type Props = { navigation: HomeScreenNavigationProp };
 
 export default function HomePage({ navigation }: Props) {
@@ -24,14 +24,14 @@ export default function HomePage({ navigation }: Props) {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
-
+      
       <TouchableOpacity
         style={[styles.half, { backgroundColor: "#2575fc" }]}
-        onPress={() => navigation.navigate("MyCellar")}
+        onPress={() => navigation.navigate("MyCellar", {})}
       >
         <Text style={styles.halfText}>🍷 My Cellar</Text>
       </TouchableOpacity>
-
+      
       <TouchableOpacity
         style={[styles.half, { backgroundColor: "#6a11cb" }]}
         onPress={() => navigation.navigate("Pairing")}

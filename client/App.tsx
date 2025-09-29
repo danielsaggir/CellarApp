@@ -14,7 +14,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   HomePage: undefined;
-  MyCellar: undefined;
+  MyCellar: { refresh?: number };
   Pairing: undefined;
   WineForm: undefined;
 };

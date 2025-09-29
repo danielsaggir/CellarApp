@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -15,6 +16,7 @@ import { Picker } from "@react-native-picker/picker";
 import config from "./config";
 
 export default function WineForm() {
+  const navigation = useNavigation();
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
   const [region, setRegion] = useState("");
@@ -26,7 +28,10 @@ export default function WineForm() {
   const [loading, setLoading] = useState(false);
 
   async function pickImage() {
-    const result = await launchImageLibrary({ mediaType: "photo", quality: 1 });
+    const result = await launchImageLibrary({
+      mediaType: "photo",
+      quality: 1,
+    });
     if (result.assets && result.assets.length > 0) {
       setImage(result.assets[0]);
     }
@@ -44,11 +49,11 @@ export default function WineForm() {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("country", country);
-      formData.append("region", region);
-      formData.append("producer", producer);
-      formData.append("vintage", vintage);
+      if (region) formData.append("region", region);
+      if (producer) formData.append("producer", producer);
+      if (vintage) formData.append("vintage", String(parseInt(vintage, 10)));
       formData.append("type", type);
-      formData.append("notes", notes);
+      if (notes) formData.append("notes", notes);
 
       if (image?.uri) {
         const filename = image.fileName || `wine_${Date.now()}.jpg`;
@@ -65,12 +70,17 @@ export default function WineForm() {
         body: formData,
       });
 
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to add wine");
+        throw new Error(data?.error || "Failed to add wine");
       }
 
       Alert.alert("Success", "Wine added!");
+      navigation.goBack(); // Auto-close after upload
       setName("");
       setCountry("");
       setRegion("");
@@ -94,7 +104,13 @@ export default function WineForm() {
       <TextInput style={styles.input} placeholder="Country" value={country} onChangeText={setCountry} />
       <TextInput style={styles.input} placeholder="Region" value={region} onChangeText={setRegion} />
       <TextInput style={styles.input} placeholder="Producer" value={producer} onChangeText={setProducer} />
-      <TextInput style={styles.input} placeholder="Vintage (year)" keyboardType="numeric" value={vintage} onChangeText={setVintage} />
+      <TextInput
+        style={styles.input}
+        placeholder="Vintage (year)"
+        keyboardType="numeric"
+        value={vintage}
+        onChangeText={setVintage}
+      />
 
       <Text style={styles.label}>Type</Text>
       <Picker selectedValue={type} onValueChange={(itemValue) => setType(itemValue)} style={styles.picker}>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -13,15 +14,15 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import config from "./config";
 
-type MyCellarScreenNavigationProp = StackNavigationProp<
+type MyCellarScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "MyCellar"
 >;
-type Props = { navigation: MyCellarScreenNavigationProp };
+type Props = { navigation: MyCellarScreenNavigationProp; route: any };
 
 type Wine = {
   id: string;
@@ -32,69 +33,77 @@ type Wine = {
   vintage: number;
   type: string;
   imageUrl?: string;
+  drinkWindow?: string | null;
+  marketValue?: string | null;
 };
 
 const screenWidth = Dimensions.get("window").width;
 const cardMargin = 10;
 const cardWidth = (screenWidth - cardMargin * 4) / 3;
 
-export default function MyCellar({ navigation }: Props) {
+export default function MyCellar({ navigation, route }: Props) {
+  console.log("MyCellar: mounted");
   const [wines, setWines] = useState<Wine[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [selectedWine, setSelectedWine] = useState<Wine | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [aiResult, setAiResult] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchWines() {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        if (!token) {
-          navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-          return;
-        }
-
-        // ✅ נתיב מסודר שמחזיר את היינות של המשתמש
-        const res = await fetch(`${config.API_URL}/wines/my`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          if (res.status === 401) {
-            navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-          } else {
-            Alert.alert("Error", "Failed to load wines");
-          }
-          return;
-        }
-
-        const data: Wine[] = await res.json();
-        setWines(data);
-      } catch (err) {
-        console.error(err);
-        Alert.alert("Error", "Something went wrong");
-      } finally {
-        setLoading(false);
+  async function fetchWines() {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
+        return;
       }
-    }
 
-    fetchWines();
-  }, [navigation]);
+      const res = await fetch(`${config.API_URL}/wines/my`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
+        } else {
+          Alert.alert("Error", "Failed to load wines");
+        }
+        return;
+      }
+
+      const data: Wine[] = await res.json();
+      setWines(data);
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("MyCellar: focused");
+      fetchWines();
+    }, [])
+  );
+
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchWines();
+    }
+  }, [route.params?.refresh]);
 
   async function analyzeWine(wine: Wine) {
     try {
       setAiLoading(true);
-      setAiResult(null);
 
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+        navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
         return;
       }
 
-      // ✅ נתיב חדש: /wines/analyze
       const res = await fetch(`${config.API_URL}/wines/analyze`, {
         method: "POST",
         headers: {
@@ -104,15 +113,13 @@ export default function MyCellar({ navigation }: Props) {
         body: JSON.stringify({ wineId: wine.id }),
       });
 
-      if (!res.ok) {
-        throw new Error("AI request failed");
-      }
+      if (!res.ok) throw new Error("AI request failed");
 
-      const data = await res.json();
-      setAiResult(data.analysis);
+      const updatedWine: Wine = await res.json();
+      setSelectedWine(updatedWine); // 👈 עכשיו יש drinkWindow & marketValue
     } catch (err) {
       console.error("AI error:", err);
-      setAiResult("❌ Failed to analyze wine");
+      Alert.alert("Error", "❌ Failed to analyze wine");
     } finally {
       setAiLoading(false);
     }
@@ -218,7 +225,20 @@ export default function MyCellar({ navigation }: Props) {
                 {aiLoading ? (
                   <ActivityIndicator size="small" color="#2575fc" />
                 ) : (
-                  <Text>{aiResult}</Text>
+                  <View style={styles.aiBoxContainer}>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Drink Window</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.drinkWindow || "N/A"}
+                      </Text>
+                    </View>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Market Value</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.marketValue || "N/A"}
+                      </Text>
+                    </View>
+                  </View>
                 )}
 
                 <TouchableOpacity
@@ -256,18 +276,10 @@ function getTypeColor(type: string): string {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   emptyText: { fontSize: 18, color: "#555", marginBottom: 20 },
-  addButton: {
-    backgroundColor: "#2575fc",
-    padding: 12,
-    borderRadius: 10,
-  },
+  addButton: { backgroundColor: "#2575fc", padding: 12, borderRadius: 10 },
   addButtonText: { color: "#fff", fontSize: 16 },
   list: { padding: 20 },
-  row: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  row: { flex: 1, flexDirection: "row", justifyContent: "space-between" },
   card: {
     width: cardWidth,
     backgroundColor: "#fff",
@@ -279,11 +291,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  image: {
-    width: "100%",
-    aspectRatio: 3 / 4,
-    borderRadius: 8,
-  },
+  image: { width: "100%", aspectRatio: 3 / 4, borderRadius: 8 },
   name: { fontSize: 12, fontWeight: "bold", marginTop: 6, textAlign: "center" },
   vintage: { fontSize: 11, color: "#666", textAlign: "center" },
   typeBadge: {
@@ -294,7 +302,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   typeText: { fontSize: 10, color: "#fff", fontWeight: "bold" },
-
   fab: {
     position: "absolute",
     bottom: 25,
@@ -311,7 +318,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   fabText: { fontSize: 28, color: "#fff", fontWeight: "bold" },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -334,6 +340,21 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
   modalSubtitle: { fontSize: 16, fontWeight: "bold", marginTop: 10 },
+  aiBoxContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  aiBox: {
+    flex: 1,
+    backgroundColor: "#f4f6f8",
+    borderRadius: 8,
+    padding: 10,
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
+  aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
   closeButton: {
     marginTop: 20,
     padding: 12,

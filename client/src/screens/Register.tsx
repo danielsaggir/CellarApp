@@ -8,14 +8,11 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import config from "./config";
 
-type RegisterScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  "Register"
->;
+type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Register">;
 type Props = { navigation: RegisterScreenNavigationProp };
 
 export default function Register({ navigation }: Props) {
@@ -33,9 +30,13 @@ export default function Register({ navigation }: Props) {
         body: JSON.stringify({ email, password, name }),
       });
 
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Registration failed");
+        throw new Error(data?.error || `Registration failed (HTTP ${res.status})`);
       }
 
       Alert.alert("Success", "Account created. Please login.");
@@ -50,12 +51,7 @@ export default function Register({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Register</Text>
-      <TextInput
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
+      <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
       <TextInput
         placeholder="Email"
         value={email}
