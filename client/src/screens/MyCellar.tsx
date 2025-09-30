@@ -28,11 +28,12 @@ type Wine = {
   id: string;
   name: string;
   country: string;
-  region?: string;
-  producer?: string;
-  vintage: number;
+  region?: string | null;
+  producer?: string | null;
+  vintage: number | null;
   type: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
+  notes?: string | null;
   drinkWindow?: string | null;
   marketValue?: string | null;
 };
@@ -42,7 +43,6 @@ const cardMargin = 10;
 const cardWidth = (screenWidth - cardMargin * 4) / 3;
 
 export default function MyCellar({ navigation, route }: Props) {
-  console.log("MyCellar: mounted");
   const [wines, setWines] = useState<Wine[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWine, setSelectedWine] = useState<Wine | null>(null);
@@ -83,7 +83,6 @@ export default function MyCellar({ navigation, route }: Props) {
 
   useFocusEffect(
     React.useCallback(() => {
-      console.log("MyCellar: focused");
       fetchWines();
     }, [])
   );
@@ -116,7 +115,12 @@ export default function MyCellar({ navigation, route }: Props) {
       if (!res.ok) throw new Error("AI request failed");
 
       const updatedWine: Wine = await res.json();
-      setSelectedWine(updatedWine); // 👈 עכשיו יש drinkWindow & marketValue
+      setSelectedWine(updatedWine);
+
+      // עדכון גם ברשימה כדי לשקף את הנתונים החדשים בכרטיס
+      setWines((prev) =>
+        prev.map((w) => (w.id === updatedWine.id ? updatedWine : w))
+      );
     } catch (err) {
       console.error("AI error:", err);
       Alert.alert("Error", "❌ Failed to analyze wine");
@@ -160,6 +164,7 @@ export default function MyCellar({ navigation, route }: Props) {
             onPress={() => {
               setSelectedWine(item);
               setModalVisible(true);
+              // ה-AI כבר רץ אוטומטית בזמן שמירה; נשאיר את זה כאן כרענון ידני למקרה הצורך
               analyzeWine(item);
             }}
           >
@@ -176,7 +181,7 @@ export default function MyCellar({ navigation, route }: Props) {
               <Text style={styles.name} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.vintage}>{item.vintage}</Text>
+              <Text style={styles.vintage}>{item.vintage ?? "-"}</Text>
               <View
                 style={[
                   styles.typeBadge,
@@ -184,6 +189,16 @@ export default function MyCellar({ navigation, route }: Props) {
                 ]}
               >
                 <Text style={styles.typeText}>{item.type}</Text>
+              </View>
+
+              {/* ✅ מציגים גם בכרטיס את תובנות ה-AI */}
+              <View style={styles.aiInline}>
+                <Text style={styles.aiInlineLabel} numberOfLines={1}>
+                  🕰️ {item.drinkWindow ?? "—"}
+                </Text>
+                <Text style={styles.aiInlineLabel} numberOfLines={1}>
+                  💰 {item.marketValue ?? "—"}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -218,7 +233,7 @@ export default function MyCellar({ navigation, route }: Props) {
                     ? `${selectedWine.region}, ${selectedWine.country}`
                     : selectedWine.country}
                 </Text>
-                <Text>Vintage: {selectedWine.vintage}</Text>
+                <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
                 <Text>Type: {selectedWine.type}</Text>
 
                 <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
@@ -302,6 +317,21 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   typeText: { fontSize: 10, color: "#fff", fontWeight: "bold" },
+
+  aiInline: {
+    marginTop: 6,
+    backgroundColor: "#f7f9fb",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    gap: 2,
+  },
+  aiInlineLabel: {
+    fontSize: 10,
+    color: "#333",
+    textAlign: "center",
+  },
+
   fab: {
     position: "absolute",
     bottom: 25,
@@ -318,6 +348,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   fabText: { fontSize: 28, color: "#fff", fontWeight: "bold" },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

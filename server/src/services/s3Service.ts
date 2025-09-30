@@ -17,7 +17,6 @@ export async function uploadImageToS3(file: Express.Multer.File): Promise<string
     Key: key,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: "public-read",
   };
   await s3.upload(params).promise();
   return `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
