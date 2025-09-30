@@ -47,7 +47,6 @@ export default function MyCellar({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [selectedWine, setSelectedWine] = useState<Wine | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
 
   async function fetchWines() {
     try {
@@ -93,42 +92,6 @@ export default function MyCellar({ navigation, route }: Props) {
     }
   }, [route.params?.refresh]);
 
-  async function analyzeWine(wine: Wine) {
-    try {
-      setAiLoading(true);
-
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
-        return;
-      }
-
-      const res = await fetch(`${config.API_URL}/wines/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ wineId: wine.id }),
-      });
-
-      if (!res.ok) throw new Error("AI request failed");
-
-      const updatedWine: Wine = await res.json();
-      setSelectedWine(updatedWine);
-
-      // עדכון גם ברשימה כדי לשקף את הנתונים החדשים בכרטיס
-      setWines((prev) =>
-        prev.map((w) => (w.id === updatedWine.id ? updatedWine : w))
-      );
-    } catch (err) {
-      console.error("AI error:", err);
-      Alert.alert("Error", "❌ Failed to analyze wine");
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -164,8 +127,7 @@ export default function MyCellar({ navigation, route }: Props) {
             onPress={() => {
               setSelectedWine(item);
               setModalVisible(true);
-              // ה-AI כבר רץ אוטומטית בזמן שמירה; נשאיר את זה כאן כרענון ידני למקרה הצורך
-              analyzeWine(item);
+              // ❌ הוסרה הקריאה המיותרת ל-analyzeWine
             }}
           >
             <View style={styles.card}>
@@ -237,24 +199,20 @@ export default function MyCellar({ navigation, route }: Props) {
                 <Text>Type: {selectedWine.type}</Text>
 
                 <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
-                {aiLoading ? (
-                  <ActivityIndicator size="small" color="#2575fc" />
-                ) : (
-                  <View style={styles.aiBoxContainer}>
-                    <View style={styles.aiBox}>
-                      <Text style={styles.aiLabel}>Drink Window</Text>
-                      <Text style={styles.aiValue}>
-                        {selectedWine.drinkWindow || "N/A"}
-                      </Text>
-                    </View>
-                    <View style={styles.aiBox}>
-                      <Text style={styles.aiLabel}>Market Value</Text>
-                      <Text style={styles.aiValue}>
-                        {selectedWine.marketValue || "N/A"}
-                      </Text>
-                    </View>
+                <View style={styles.aiBoxContainer}>
+                  <View style={styles.aiBox}>
+                    <Text style={styles.aiLabel}>Drink Window</Text>
+                    <Text style={styles.aiValue}>
+                      {selectedWine.drinkWindow || "N/A"}
+                    </Text>
                   </View>
-                )}
+                  <View style={styles.aiBox}>
+                    <Text style={styles.aiLabel}>Market Value</Text>
+                    <Text style={styles.aiValue}>
+                      {selectedWine.marketValue || "N/A"}
+                    </Text>
+                  </View>
+                </View>
 
                 <TouchableOpacity
                   style={styles.closeButton}
