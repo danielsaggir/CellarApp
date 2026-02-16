@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from "react-native";
-import config from "./config";
+import { aiApi } from "../services/api";
 
 export default function PairingScreen() {
   const [food, setFood] = useState("");
@@ -11,12 +11,7 @@ export default function PairingScreen() {
     try {
       setLoading(true);
       setSuggestion("");
-      const res = await fetch(`${config.API_URL}/ai/pairing`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ food }),
-      });
-      const data = await res.json();
+      const data = await aiApi.getPairing(food);
       setSuggestion(data.suggestion || "No suggestion found");
     } catch {
       setSuggestion("Error getting pairing");

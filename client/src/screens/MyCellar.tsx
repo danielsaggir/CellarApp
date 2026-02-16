@@ -13,30 +13,15 @@ import {
   Modal,
   ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
-import config from "./config";
+import { RootStackParamList, Wine } from "../types";
+import { wineApi, ApiError } from "../services/api";
 
 type MyCellarScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "MyCellar"
 >;
 type Props = { navigation: MyCellarScreenNavigationProp; route: any };
-
-type Wine = {
-  id: string;
-  name: string;
-  country: string;
-  region?: string | null;
-  producer?: string | null;
-  vintage: number | null;
-  type: string;
-  imageUrl?: string | null;
-  notes?: string | null;
-  drinkWindow?: string | null;
-  marketValue?: string | null;
-};
 
 const screenWidth = Dimensions.get("window").width;
 const cardMargin = 10;
@@ -51,30 +36,15 @@ export default function MyCellar({ navigation, route }: Props) {
   async function fetchWines() {
     try {
       setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
-        return;
-      }
-
-      const res = await fetch(`${config.API_URL}/wines/my`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
-        } else {
-          Alert.alert("Error", "Failed to load wines");
-        }
-        return;
-      }
-
-      const data: Wine[] = await res.json();
+      const data = await wineApi.getMyWines();
       setWines(data);
     } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Something went wrong");
+      if (err instanceof ApiError && err.status === 401) {
+        navigation.reset({ index: 0, routes: [{ name: "Login" as const }] });
+      } else {
+        console.error(err);
+        Alert.alert("Error", "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }

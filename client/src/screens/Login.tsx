@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
-import config from "./config";
+import { RootStackParamList } from "../types";
+import { authApi } from "../services/api";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 type Props = { navigation: LoginScreenNavigationProp };
@@ -24,21 +24,7 @@ export default function Login({ navigation }: Props) {
   async function handleLogin() {
     try {
       setLoading(true);
-      const res = await fetch(`${config.API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {}
-
-      if (!res.ok) {
-        throw new Error(data?.error || `Login failed (HTTP ${res.status})`);
-      }
-
+      const data = await authApi.login(email, password);
       await AsyncStorage.setItem("token", data.token);
       navigation.reset({ index: 0, routes: [{ name: "HomePage" as const }] });
     } catch (err: any) {

@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
-import config from "./config";
+import { RootStackParamList } from "../types";
+import { authApi } from "../services/api";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Register">;
 type Props = { navigation: RegisterScreenNavigationProp };
@@ -24,21 +24,7 @@ export default function Register({ navigation }: Props) {
   async function handleRegister() {
     try {
       setLoading(true);
-      const res = await fetch(`${config.API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
-      });
-
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {}
-
-      if (!res.ok) {
-        throw new Error(data?.error || `Registration failed (HTTP ${res.status})`);
-      }
-
+      await authApi.register(email, password, name);
       Alert.alert("Success", "Account created. Please login.");
       navigation.navigate("Login");
     } catch (err: any) {

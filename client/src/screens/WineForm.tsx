@@ -10,16 +10,10 @@ import {
   Image,
   Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { launchImageLibrary, Asset } from "react-native-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
-import config from "./config";
-
-type WineTypeItem = {
-  label: string;
-  value: string;
-  color: string;
-};
+import { WineTypeItem } from "../types";
+import { wineApi } from "../services/api";
 
 export default function WineForm() {
   const navigation = useNavigation();
@@ -54,11 +48,6 @@ export default function WineForm() {
   async function handleSubmit() {
     try {
       setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        Alert.alert("Auth", "Please login first");
-        return;
-      }
 
       const formData = new FormData();
       formData.append("name", name);
@@ -78,23 +67,10 @@ export default function WineForm() {
         } as any);
       }
 
-      const res = await fetch(`${config.API_URL}/wines`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {}
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to add wine");
-      }
+      await wineApi.createWine(formData);
 
       Alert.alert("Success", "Wine added!");
-      navigation.goBack(); // Auto-close after upload
+      navigation.goBack();
       setName("");
       setCountry("");
       setRegion("");
