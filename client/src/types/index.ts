@@ -4,7 +4,7 @@ export type RootStackParamList = {
   HomePage: undefined;
   MyCellar: { refresh?: number };
   Pairing: undefined;
-  WineForm: undefined;
+  WineForm: { wine?: Wine } | undefined;
 };
 
 export type Wine = {

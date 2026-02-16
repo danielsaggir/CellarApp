@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -12,18 +12,26 @@ import {
 } from "react-native";
 import { launchImageLibrary, Asset } from "react-native-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
-import { WineTypeItem } from "../types";
+import { RootStackParamList, WineTypeItem } from "../types";
 import { wineApi } from "../services/api";
+
+type WineFormRouteProp = RouteProp<RootStackParamList, "WineForm">;
 
 export default function WineForm() {
   const navigation = useNavigation();
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("");
-  const [region, setRegion] = useState("");
-  const [producer, setProducer] = useState("");
-  const [vintage, setVintage] = useState("");
-  const [type, setType] = useState("");
-  const [notes, setNotes] = useState("");
+  const route = useRoute<WineFormRouteProp>();
+  const editingWine = route.params?.wine ?? null;
+  const isEditing = editingWine !== null;
+
+  const [name, setName] = useState(editingWine?.name ?? "");
+  const [country, setCountry] = useState(editingWine?.country ?? "");
+  const [region, setRegion] = useState(editingWine?.region ?? "");
+  const [producer, setProducer] = useState(editingWine?.producer ?? "");
+  const [vintage, setVintage] = useState(
+    editingWine?.vintage != null ? String(editingWine.vintage) : ""
+  );
+  const [type, setType] = useState(editingWine?.type ?? "");
+  const [notes, setNotes] = useState(editingWine?.notes ?? "");
   const [image, setImage] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -67,9 +75,14 @@ export default function WineForm() {
         } as any);
       }
 
-      await wineApi.createWine(formData);
+      if (isEditing) {
+        await wineApi.updateWine(editingWine!.id, formData);
+        Alert.alert("Success", "Wine updated!");
+      } else {
+        await wineApi.createWine(formData);
+        Alert.alert("Success", "Wine added!");
+      }
 
-      Alert.alert("Success", "Wine added!");
       navigation.goBack();
       setName("");
       setCountry("");
@@ -81,7 +94,7 @@ export default function WineForm() {
       setImage(null);
     } catch (err: any) {
       console.error(err);
-      Alert.alert("Error", err.message || "Failed to add wine");
+      Alert.alert("Error", err.message || (isEditing ? "Failed to update wine" : "Failed to add wine"));
     } finally {
       setLoading(false);
     }
@@ -96,7 +109,7 @@ export default function WineForm() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add a Wine 🍷</Text>
+      <Text style={styles.title}>{isEditing ? "Edit Wine 🍷" : "Add a Wine 🍷"}</Text>
       <TextInput
         style={styles.input}
         placeholder="Name"
@@ -154,12 +167,14 @@ export default function WineForm() {
           {image ? "Change Image" : "Pick an Image"}
         </Text>
       </TouchableOpacity>
-      {image?.uri && (
+      {image?.uri ? (
         <Image source={{ uri: image.uri }} style={styles.preview} />
-      )}
+      ) : isEditing && editingWine?.imageUrl ? (
+        <Image source={{ uri: editingWine.imageUrl }} style={styles.preview} />
+      ) : null}
 
       <Button
-        title={loading ? "Saving..." : "Save Wine"}
+        title={loading ? "Saving..." : isEditing ? "Update Wine" : "Save Wine"}
         onPress={handleSubmit}
         disabled={loading}
       />

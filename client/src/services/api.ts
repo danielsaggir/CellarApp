@@ -72,6 +72,15 @@ export const wineApi = {
       body: formData,
     });
   },
+
+  async updateWine(id: string, formData: FormData): Promise<Wine> {
+    const auth = await getAuthHeaders();
+    return apiFetch(`/wines/${id}`, {
+      method: "PUT",
+      headers: auth,
+      body: formData,
+    });
+  },
 };
 
 export const aiApi = {
