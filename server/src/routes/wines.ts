@@ -106,6 +106,99 @@ router.get("/my", authenticateJWT, async (req: AuthRequest, res) => {
   res.json(wines);
 });
 
+router.put(
+  "/:id",
+  authenticateJWT,
+  upload.single("image"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { id } = req.params;
+
+      const existing = await prisma.wine.findFirst({
+        where: { id, users: { some: { id: req.user!.userId } } },
+      });
+      if (!existing) {
+        return res.status(404).json({ error: "Wine not found or not yours" });
+      }
+
+      let imageUrl: string | null = existing.imageUrl;
+      if (req.file) {
+        imageUrl = await uploadImageToS3(req.file);
+      }
+
+      const { name, country, region, producer, vintage, type, notes } = req.body;
+
+      if (!name || name.trim() === "") {
+        return res.status(400).json({ error: "Wine name is required" });
+      }
+      if (!country || country.trim() === "") {
+        return res.status(400).json({ error: "Country is required" });
+      }
+      if (!type) {
+        return res.status(400).json({ error: "Wine type is required" });
+      }
+
+      const allowedTypes = ["RED", "WHITE", "ROSE", "SPARKLING", "ORANGE"];
+      const cleanType = String(type).toUpperCase();
+      if (!allowedTypes.includes(cleanType)) {
+        return res.status(400).json({
+          error: `Invalid wine type. Allowed types: ${allowedTypes.join(", ")}`,
+        });
+      }
+
+      let vintageNumber: number | null = null;
+      if (vintage) {
+        vintageNumber = parseInt(vintage, 10);
+        if (isNaN(vintageNumber)) {
+          return res.status(400).json({ error: "Vintage must be a valid number" });
+        }
+      }
+
+      let updated = await prisma.wine.update({
+        where: { id },
+        data: {
+          name: name.trim(),
+          country: country.trim(),
+          region: region?.trim() || null,
+          producer: producer?.trim() || null,
+          vintage: vintageNumber,
+          type: cleanType as any,
+          imageUrl,
+          notes: notes?.trim() || null,
+        },
+      });
+
+      try {
+        if (updated.vintage !== null && updated.vintage !== undefined) {
+          const analysis = await aiAnalyzeWine({
+            name: updated.name,
+            country: updated.country,
+            region: updated.region ?? null,
+            producer: updated.producer ?? null,
+            vintage: updated.vintage as number,
+            type: updated.type as string,
+          });
+
+          updated = await prisma.wine.update({
+            where: { id },
+            data: {
+              drinkWindow: analysis.drinkWindow || null,
+              marketValue: analysis.marketValue || null,
+            },
+          });
+        }
+      } catch (aiErr) {
+        console.warn("AI enrichment failed on update. Keeping previous values.", aiErr);
+      }
+
+      res.json(updated);
+    } catch (err: any) {
+      console.error("Wine update error:", err);
+      res.status(500).json({ error: err.message || "Failed to update wine" });
+    }
+  }
+);
+
 router.delete("/:id", authenticateJWT, async (req: AuthRequest, res) => {
   if (!req.user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
   const { id } = req.params;

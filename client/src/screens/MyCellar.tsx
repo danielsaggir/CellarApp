@@ -185,6 +185,16 @@ export default function MyCellar({ navigation, route }: Props) {
                 </View>
 
                 <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    setModalVisible(false);
+                    navigation.navigate("WineForm", { wine: selectedWine });
+                  }}
+                >
+                  <Text style={styles.editText}>Edit</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
                 >
@@ -314,8 +324,16 @@ const styles = StyleSheet.create({
   },
   aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
   aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
-  closeButton: {
+  editButton: {
     marginTop: 20,
+    padding: 12,
+    backgroundColor: "#2575fc",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  editText: { color: "#fff", fontWeight: "bold" },
+  closeButton: {
+    marginTop: 10,
     padding: 12,
     backgroundColor: "#d32f2f",
     borderRadius: 8,
