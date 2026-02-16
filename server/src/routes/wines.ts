@@ -200,10 +200,33 @@ router.put(
 );
 
 router.delete("/:id", authenticateJWT, async (req: AuthRequest, res) => {
-  if (!req.user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
   const { id } = req.params;
   try {
-    await prisma.wine.delete({ where: { id } });
+    if (req.user?.isAdmin) {
+      await prisma.wine.delete({ where: { id } });
+      return res.json({ success: true });
+    }
+
+    const existing = await prisma.wine.findFirst({
+      where: { id, users: { some: { id: req.user!.userId } } },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: "Wine not found or not yours" });
+    }
+
+    await prisma.wine.update({
+      where: { id },
+      data: { users: { disconnect: { id: req.user!.userId } } },
+    });
+
+    const wine = await prisma.wine.findUnique({
+      where: { id },
+      include: { users: true },
+    });
+    if (wine && wine.users.length === 0) {
+      await prisma.wine.delete({ where: { id } });
+    }
+
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: "Wine not found" });

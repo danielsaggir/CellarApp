@@ -195,6 +195,35 @@ export default function MyCellar({ navigation, route }: Props) {
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => {
+                    Alert.alert(
+                      "Delete Wine",
+                      `Are you sure you want to remove "${selectedWine.name}" from your cellar?`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: async () => {
+                            try {
+                              await wineApi.deleteWine(selectedWine.id);
+                              setModalVisible(false);
+                              setSelectedWine(null);
+                              fetchWines();
+                            } catch (err) {
+                              Alert.alert("Error", "Failed to delete wine");
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={styles.deleteText}>Delete</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
                 >
@@ -332,6 +361,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   editText: { color: "#fff", fontWeight: "bold" },
+  deleteButton: {
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: "#b71c1c",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  deleteText: { color: "#fff", fontWeight: "bold" },
   closeButton: {
     marginTop: 10,
     padding: 12,

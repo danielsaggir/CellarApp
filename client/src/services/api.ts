@@ -81,6 +81,14 @@ export const wineApi = {
       body: formData,
     });
   },
+
+  async deleteWine(id: string): Promise<{ success: boolean }> {
+    const auth = await getAuthHeaders();
+    return apiFetch(`/wines/${id}`, {
+      method: "DELETE",
+      headers: auth,
+    });
+  },
 };
 
 export const aiApi = {
