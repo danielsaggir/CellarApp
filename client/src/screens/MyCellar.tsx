@@ -148,41 +148,73 @@ export default function MyCellar({ navigation, route }: Props) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {selectedWine && (
-              <ScrollView>
-                <Image
-                  source={{
-                    uri:
-                      selectedWine.imageUrl ||
-                      "https://via.placeholder.com/300x400?text=Wine",
-                  }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                <Text style={styles.modalTitle}>{selectedWine.name}</Text>
-                <Text>{selectedWine.producer || "Unknown Producer"}</Text>
-                <Text>
-                  {selectedWine.region
-                    ? `${selectedWine.region}, ${selectedWine.country}`
-                    : selectedWine.country}
-                </Text>
-                <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
-                <Text>Type: {selectedWine.type}</Text>
-
-                <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
-                <View style={styles.aiBoxContainer}>
-                  <View style={styles.aiBox}>
-                    <Text style={styles.aiLabel}>Drink Window</Text>
-                    <Text style={styles.aiValue}>
-                      {selectedWine.drinkWindow || "N/A"}
-                    </Text>
-                  </View>
-                  <View style={styles.aiBox}>
-                    <Text style={styles.aiLabel}>Market Value</Text>
-                    <Text style={styles.aiValue}>
-                      {selectedWine.marketValue || "N/A"}
-                    </Text>
+              <>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity
+                    style={styles.headerCloseBtn}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.headerCloseBtnText}>✕</Text>
+                  </TouchableOpacity>
+                  <View style={styles.headerActions}>
+                    <TouchableOpacity
+                      style={styles.headerEditBtn}
+                      onPress={() => {
+                        setModalVisible(false);
+                        navigation.navigate("WineForm", { wine: selectedWine });
+                      }}
+                    >
+                      <Text style={styles.headerBtnText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.headerDeleteBtn}
+                      onPress={() => {
+                        Alert.alert(
+                          "Delete Wine",
+                          `Are you sure you want to remove "${selectedWine.name}" from your cellar?`,
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Delete",
+                              style: "destructive",
+                              onPress: async () => {
+                                try {
+                                  await wineApi.deleteWine(selectedWine.id);
+                                  setModalVisible(false);
+                                  setSelectedWine(null);
+                                  fetchWines();
+                                } catch {
+                                  Alert.alert("Error", "Failed to delete wine");
+                                }
+                              },
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      <Text style={styles.headerBtnText}>Delete</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
+                <ScrollView>
+                  <Image
+                    source={{
+                      uri:
+                        selectedWine.imageUrl ||
+                        "https://via.placeholder.com/300x400?text=Wine",
+                    }}
+                    style={styles.modalImage}
+                    resizeMode="cover"
+                  />
+                  <Text style={styles.modalTitle}>{selectedWine.name}</Text>
+                  <Text>{selectedWine.producer || "Unknown Producer"}</Text>
+                  <Text>
+                    {selectedWine.region
+                      ? `${selectedWine.region}, ${selectedWine.country}`
+                      : selectedWine.country}
+                  </Text>
+                  <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
+                  <Text>Type: {selectedWine.type}</Text>
 
                 <TouchableOpacity
                   style={styles.editButton}
@@ -336,6 +368,35 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  headerCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCloseBtnText: { fontSize: 16, color: "#555", fontWeight: "bold" },
+  headerActions: { flexDirection: "row", gap: 8 },
+  headerEditBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: "#2575fc",
+    borderRadius: 6,
+  },
+  headerDeleteBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: "#d32f2f",
+    borderRadius: 6,
+  },
+  headerBtnText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
   modalTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 5 },
   modalSubtitle: { fontSize: 16, fontWeight: "bold", marginTop: 10 },
   aiBoxContainer: {
