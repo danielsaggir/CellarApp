@@ -2,8 +2,9 @@ import { Router } from "express";
 import prisma from "../prisma";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
-import { analyzeSchema, pairingSchema } from "../schemas/ai";
-import { aiPairingForFood, aiAnalyzeWine } from "../services/aiService";
+import { analyzeSchema, pairingSchema, previewInsightsSchema } from "../schemas/ai";
+import { aiPairingForFood, aiAnalyzeWine, aiScanWineLabel } from "../services/aiService";
+import { upload } from "../services/s3Service";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.post("/wines/analyze", authenticateJWT, validate(analyzeSchema), async (r
       name: wine.name,
       country: wine.country,
       region: wine.region ?? null,
-      producer: wine.producer ?? null,
+      winery: wine.winery ?? null,
       vintage: wine.vintage as number,
       type: wine.type as string,
     });
@@ -38,6 +39,39 @@ router.post("/wines/analyze", authenticateJWT, validate(analyzeSchema), async (r
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "AI analysis failed" });
+  }
+});
+
+router.post("/wines/scan-label", authenticateJWT, upload.single("image"), async (req: AuthRequest, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
+    const imageBase64 = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype || "image/jpeg";
+    const result = await aiScanWineLabel(imageBase64, mimeType);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to scan wine label" });
+  }
+});
+
+router.post("/wines/preview-insights", authenticateJWT, validate(previewInsightsSchema), async (req: AuthRequest, res) => {
+  try {
+    const { name, country, type, region, winery, vintage } = req.body;
+    const analysis = await aiAnalyzeWine({
+      name,
+      country,
+      region: region || null,
+      winery: winery || null,
+      vintage,
+      type,
+    });
+    res.json(analysis);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "AI preview insights failed" });
   }
 });
 

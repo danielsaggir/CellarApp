@@ -12,8 +12,10 @@ export type Wine = {
   name: string;
   country: string;
   region?: string | null;
-  producer?: string | null;
+  winery?: string | null;
   vintage: number | null;
+  amount?: number | null;
+  grapes?: string | null;
   type: string;
   imageUrl?: string | null;
   notes?: string | null;
@@ -25,4 +27,19 @@ export type WineTypeItem = {
   label: string;
   value: string;
   color: string;
+};
+
+export type ScannedWine = {
+  name: string | null;
+  country: string | null;
+  region: string | null;
+  winery: string | null;
+  vintage: number | null;
+  type: string | null;
+  grapes: string | null;
+};
+
+export type WineInsights = {
+  drinkWindow: string | null;
+  marketValue: string | null;
 };

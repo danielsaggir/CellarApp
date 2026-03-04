@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config";
-import { Wine } from "../types";
+import { Wine, ScannedWine, WineInsights } from "../types";
 
 class ApiError extends Error {
   status: number;
@@ -87,6 +87,31 @@ export const wineApi = {
     return apiFetch(`/wines/${id}`, {
       method: "DELETE",
       headers: auth,
+    });
+  },
+
+  async scanLabel(formData: FormData): Promise<ScannedWine> {
+    const auth = await getAuthHeaders();
+    return apiFetch("/wines/scan-label", {
+      method: "POST",
+      headers: auth,
+      body: formData,
+    });
+  },
+
+  async previewInsights(data: {
+    name: string;
+    country: string;
+    type: string;
+    region?: string;
+    winery?: string;
+    vintage?: number;
+  }): Promise<WineInsights> {
+    const auth = await getAuthHeaders();
+    return apiFetch("/wines/preview-insights", {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
   },
 };

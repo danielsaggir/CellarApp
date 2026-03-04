@@ -19,9 +19,10 @@ type ScannedWine = {
   name: string | null;
   country: string | null;
   region: string | null;
-  producer: string | null;
+  winery: string | null;
   vintage: number | null;
   type: string | null;
+  grapes: string | null;
 };
 
 export async function aiScanWineLabel(imageBase64: string, mimeType: string): Promise<ScannedWine> {
@@ -37,9 +38,10 @@ export async function aiScanWineLabel(imageBase64: string, mimeType: string): Pr
 - name: the wine name
 - country: country of origin
 - region: wine region (e.g., Bordeaux, Napa Valley)
-- producer: winery or producer name
+- winery: winery or producer name
 - vintage: vintage year as a number
 - type: one of RED, WHITE, ROSE, SPARKLING, ORANGE
+- grapes: grape varieties (e.g., "Cabernet Sauvignon, Merlot")
 
 Use null for any field you cannot determine from the label.`,
           },
@@ -65,9 +67,10 @@ Use null for any field you cannot determine from the label.`,
     name: data.name || null,
     country: data.country || null,
     region: data.region || null,
-    producer: data.producer || null,
+    winery: data.winery || null,
     vintage: data.vintage ? Number(data.vintage) : null,
     type: validTypes.includes(data.type) ? data.type : null,
+    grapes: data.grapes || null,
   };
 }
 
@@ -76,7 +79,7 @@ type Wine = {
   name: string;
   country: string;
   region: string | null;
-  producer: string | null;
+  winery: string | null;
   vintage?: number;
   type: string;
 };
@@ -88,7 +91,7 @@ type WineEnrichment = {
 
 export async function aiAnalyzeWine(wine: Wine): Promise<WineEnrichment> {
   const desc = `${wine.name} (${wine.vintage ?? "N/A"}) - ${wine.type}.
-  ${wine.producer ?? ""} ${wine.region ? wine.region + ", " : ""}${wine.country}`;
+  ${wine.winery ?? ""} ${wine.region ? wine.region + ", " : ""}${wine.country}`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",

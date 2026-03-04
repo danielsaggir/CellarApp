@@ -24,8 +24,10 @@ model Wine {
   type        WineType
   country     String
   region      String?
-  producer    String?
+  winery      String?
   vintage     Int?
+  amount      Int?
+  grapes      String?
   imageUrl    String?
   notes       String?    // 👈 הערות אישיות
   drinkWindow String?    // 👈 חלון שתייה (ע"י AI)

@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
 import { authApi } from "../services/api";
+import { colors, spacing, radii, fontSizes } from "../theme";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 type Props = { navigation: LoginScreenNavigationProp };
@@ -59,50 +60,88 @@ export default function Login({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.brand}>CellarApp</Text>
+      <Text style={styles.subtitle}>Your personal wine collection</Text>
+
+      <Text style={styles.label}>Email</Text>
       <TextInput
-        placeholder="Email *"
+        placeholder="you@example.com"
+        placeholderTextColor={colors.textSecondary}
         value={email}
         onChangeText={(v) => { setEmail(v); clearError("email"); }}
         style={[styles.input, errors.email && styles.inputError]}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
       {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+
+      <Text style={styles.label}>Password</Text>
       <TextInput
-        placeholder="Password *"
+        placeholder="Enter your password"
+        placeholderTextColor={colors.textSecondary}
         value={password}
         onChangeText={(v) => { setPassword(v); clearError("password"); }}
         secureTextEntry
         style={[styles.input, errors.password && styles.inputError]}
       />
       {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+
       {loading ? (
-        <ActivityIndicator color="#2575fc" />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : (
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+          <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       )}
+
       <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={styles.link}>Don't have an account? Register</Text>
+        <Text style={styles.link}>Don't have an account? <Text style={styles.linkBold}>Register</Text></Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
+  container: { flex: 1, justifyContent: "center", padding: spacing.xl, backgroundColor: colors.background },
+  brand: {
+    fontSize: fontSizes.hero,
+    fontWeight: "bold",
+    color: colors.primary,
+    textAlign: "center",
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontSize: fontSizes.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+  },
+  label: {
+    fontSize: fontSizes.body,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+    fontWeight: "600",
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radii.sm,
+    padding: spacing.md - 2,
+    marginBottom: spacing.md,
+    color: colors.text,
+    fontSize: fontSizes.body,
   },
-  inputError: { borderColor: "#d32f2f" },
-  errorText: { color: "#d32f2f", fontSize: 12, marginBottom: 8, marginTop: -6 },
-  button: { backgroundColor: "#2575fc", padding: 12, borderRadius: 8, alignItems: "center" },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  link: { marginTop: 15, textAlign: "center", color: "#2575fc" },
+  inputError: { borderColor: colors.error },
+  errorText: { color: colors.error, fontSize: fontSizes.small, marginBottom: spacing.sm, marginTop: -spacing.sm },
+  button: {
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: radii.sm,
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  buttonText: { color: colors.background, fontWeight: "bold", fontSize: fontSizes.subtitle },
+  link: { marginTop: spacing.lg, textAlign: "center", color: colors.textSecondary, fontSize: fontSizes.body },
+  linkBold: { color: colors.primary, fontWeight: "bold" },
 });
