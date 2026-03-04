@@ -20,8 +20,31 @@ export default function Login({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function clearError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validate(): boolean {
+    const next: Record<string, string> = {};
+    if (!email.trim()) {
+      next.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      next.email = "Invalid email format";
+    }
+    if (!password) next.password = "Password is required";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
 
   async function handleLogin() {
+    if (!validate()) return;
     try {
       setLoading(true);
       const data = await authApi.login(email, password);
@@ -38,19 +61,21 @@ export default function Login({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <TextInput
-        placeholder="Email"
+        placeholder="Email *"
         value={email}
-        onChangeText={setEmail}
-        style={styles.input}
+        onChangeText={(v) => { setEmail(v); clearError("email"); }}
+        style={[styles.input, errors.email && styles.inputError]}
         autoCapitalize="none"
       />
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
       <TextInput
-        placeholder="Password"
+        placeholder="Password *"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => { setPassword(v); clearError("password"); }}
         secureTextEntry
-        style={styles.input}
+        style={[styles.input, errors.password && styles.inputError]}
       />
+      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
       {loading ? (
         <ActivityIndicator color="#2575fc" />
       ) : (
@@ -75,6 +100,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 12,
   },
+  inputError: { borderColor: "#d32f2f" },
+  errorText: { color: "#d32f2f", fontSize: 12, marginBottom: 8, marginTop: -6 },
   button: { backgroundColor: "#2575fc", padding: 12, borderRadius: 8, alignItems: "center" },
   buttonText: { color: "#fff", fontWeight: "bold" },
   link: { marginTop: 15, textAlign: "center", color: "#2575fc" },
