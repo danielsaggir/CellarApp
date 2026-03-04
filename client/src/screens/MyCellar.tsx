@@ -216,52 +216,23 @@ export default function MyCellar({ navigation, route }: Props) {
                   <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
                   <Text>Type: {selectedWine.type}</Text>
 
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate("WineForm", { wine: selectedWine });
-                  }}
-                >
-                  <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Delete Wine",
-                      `Are you sure you want to remove "${selectedWine.name}" from your cellar?`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: async () => {
-                            try {
-                              await wineApi.deleteWine(selectedWine.id);
-                              setModalVisible(false);
-                              setSelectedWine(null);
-                              fetchWines();
-                            } catch (err) {
-                              Alert.alert("Error", "Failed to delete wine");
-                            }
-                          },
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={styles.deleteText}>Delete</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.closeText}>Close</Text>
-                </TouchableOpacity>
-              </ScrollView>
+                  <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
+                  <View style={styles.aiBoxContainer}>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Drink Window</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.drinkWindow || "N/A"}
+                      </Text>
+                    </View>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Market Value</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.marketValue || "N/A"}
+                      </Text>
+                    </View>
+                  </View>
+                </ScrollView>
+              </>
             )}
           </View>
         </View>
@@ -414,28 +385,4 @@ const styles = StyleSheet.create({
   },
   aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
   aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
-  editButton: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: "#2575fc",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  editText: { color: "#fff", fontWeight: "bold" },
-  deleteButton: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: "#b71c1c",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  deleteText: { color: "#fff", fontWeight: "bold" },
-  closeButton: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: "#d32f2f",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  closeText: { color: "#fff", fontWeight: "bold" },
 });
