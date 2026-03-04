@@ -20,8 +20,36 @@ export default function Register({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function clearError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validate(): boolean {
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = "Name is required";
+    if (!email.trim()) {
+      next.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      next.email = "Invalid email format";
+    }
+    if (!password) {
+      next.password = "Password is required";
+    } else if (password.length < 6) {
+      next.password = "Password must be at least 6 characters";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
 
   async function handleRegister() {
+    if (!validate()) return;
     try {
       setLoading(true);
       await authApi.register(email, password, name);
@@ -37,21 +65,29 @@ export default function Register({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Register</Text>
-      <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
       <TextInput
-        placeholder="Email"
+        placeholder="Name *"
+        value={name}
+        onChangeText={(v) => { setName(v); clearError("name"); }}
+        style={[styles.input, errors.name && styles.inputError]}
+      />
+      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+      <TextInput
+        placeholder="Email *"
         value={email}
-        onChangeText={setEmail}
-        style={styles.input}
+        onChangeText={(v) => { setEmail(v); clearError("email"); }}
+        style={[styles.input, errors.email && styles.inputError]}
         autoCapitalize="none"
       />
+      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
       <TextInput
-        placeholder="Password"
+        placeholder="Password *"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(v) => { setPassword(v); clearError("password"); }}
         secureTextEntry
-        style={styles.input}
+        style={[styles.input, errors.password && styles.inputError]}
       />
+      {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
       {loading ? (
         <ActivityIndicator color="#2575fc" />
       ) : (
@@ -76,6 +112,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 12,
   },
+  inputError: { borderColor: "#d32f2f" },
+  errorText: { color: "#d32f2f", fontSize: 12, marginBottom: 8, marginTop: -6 },
   button: { backgroundColor: "#2575fc", padding: 12, borderRadius: 8, alignItems: "center" },
   buttonText: { color: "#fff", fontWeight: "bold" },
   link: { marginTop: 15, textAlign: "center", color: "#2575fc" },

@@ -2,6 +2,8 @@ import { Router } from "express";
 import prisma from "../prisma";
 import { upload, uploadImageToS3 } from "../services/s3Service";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { wineBodySchema } from "../schemas/wine";
 import { aiAnalyzeWine } from "../services/aiService";
 
 const router = Router();
@@ -10,6 +12,7 @@ router.post(
   "/",
   authenticateJWT,
   upload.single("image"),
+  validate(wineBodySchema),
   async (req: AuthRequest, res) => {
     try {
       let imageUrl: string | null = null;
@@ -19,40 +22,14 @@ router.post(
 
       const { name, country, region, producer, vintage, type, notes } = req.body;
 
-      if (!name || name.trim() === "") {
-        return res.status(400).json({ error: "Wine name is required" });
-      }
-      if (!country || country.trim() === "") {
-        return res.status(400).json({ error: "Country is required" });
-      }
-      if (!type) {
-        return res.status(400).json({ error: "Wine type is required" });
-      }
-
-      const allowedTypes = ["RED", "WHITE", "ROSE", "SPARKLING", "ORANGE"];
-      const cleanType = String(type).toUpperCase();
-      if (!allowedTypes.includes(cleanType)) {
-        return res.status(400).json({
-          error: `Invalid wine type. Allowed types: ${allowedTypes.join(", ")}`,
-        });
-      }
-
-      let vintageNumber: number | null = null;
-      if (vintage) {
-        vintageNumber = parseInt(vintage, 10);
-        if (isNaN(vintageNumber)) {
-          return res.status(400).json({ error: "Vintage must be a valid number" });
-        }
-      }
-
       const created = await prisma.wine.create({
         data: {
-          name: name.trim(),
-          country: country.trim(),
+          name,
+          country,
           region: region?.trim() || null,
           producer: producer?.trim() || null,
-          vintage: vintageNumber,
-          type: cleanType as any,
+          vintage: vintage ?? null,
+          type: type as any,
           imageUrl: imageUrl || null,
           notes: notes?.trim() || null,
           drinkWindow: null,
@@ -110,6 +87,7 @@ router.put(
   "/:id",
   authenticateJWT,
   upload.single("image"),
+  validate(wineBodySchema),
   async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
@@ -128,41 +106,15 @@ router.put(
 
       const { name, country, region, producer, vintage, type, notes } = req.body;
 
-      if (!name || name.trim() === "") {
-        return res.status(400).json({ error: "Wine name is required" });
-      }
-      if (!country || country.trim() === "") {
-        return res.status(400).json({ error: "Country is required" });
-      }
-      if (!type) {
-        return res.status(400).json({ error: "Wine type is required" });
-      }
-
-      const allowedTypes = ["RED", "WHITE", "ROSE", "SPARKLING", "ORANGE"];
-      const cleanType = String(type).toUpperCase();
-      if (!allowedTypes.includes(cleanType)) {
-        return res.status(400).json({
-          error: `Invalid wine type. Allowed types: ${allowedTypes.join(", ")}`,
-        });
-      }
-
-      let vintageNumber: number | null = null;
-      if (vintage) {
-        vintageNumber = parseInt(vintage, 10);
-        if (isNaN(vintageNumber)) {
-          return res.status(400).json({ error: "Vintage must be a valid number" });
-        }
-      }
-
       let updated = await prisma.wine.update({
         where: { id },
         data: {
-          name: name.trim(),
-          country: country.trim(),
+          name,
+          country,
           region: region?.trim() || null,
           producer: producer?.trim() || null,
-          vintage: vintageNumber,
-          type: cleanType as any,
+          vintage: vintage ?? null,
+          type: type as any,
           imageUrl,
           notes: notes?.trim() || null,
         },
@@ -200,10 +152,33 @@ router.put(
 );
 
 router.delete("/:id", authenticateJWT, async (req: AuthRequest, res) => {
-  if (!req.user?.isAdmin) return res.status(403).json({ error: "Forbidden" });
   const { id } = req.params;
   try {
-    await prisma.wine.delete({ where: { id } });
+    if (req.user?.isAdmin) {
+      await prisma.wine.delete({ where: { id } });
+      return res.json({ success: true });
+    }
+
+    const existing = await prisma.wine.findFirst({
+      where: { id, users: { some: { id: req.user!.userId } } },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: "Wine not found or not yours" });
+    }
+
+    await prisma.wine.update({
+      where: { id },
+      data: { users: { disconnect: { id: req.user!.userId } } },
+    });
+
+    const wine = await prisma.wine.findUnique({
+      where: { id },
+      include: { users: true },
+    });
+    if (wine && wine.users.length === 0) {
+      await prisma.wine.delete({ where: { id } });
+    }
+
     res.json({ success: true });
   } catch {
     res.status(404).json({ error: "Wine not found" });

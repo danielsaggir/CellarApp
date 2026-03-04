@@ -82,19 +82,11 @@ export const wineApi = {
     });
   },
 
-  async scanLabel(formData: FormData): Promise<{
-    name: string | null;
-    country: string | null;
-    region: string | null;
-    producer: string | null;
-    vintage: number | null;
-    type: string | null;
-  }> {
+  async deleteWine(id: string): Promise<{ success: boolean }> {
     const auth = await getAuthHeaders();
-    return apiFetch("/wines/scan-label", {
-      method: "POST",
+    return apiFetch(`/wines/${id}`, {
+      method: "DELETE",
       headers: auth,
-      body: formData,
     });
   },
 };
