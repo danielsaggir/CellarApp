@@ -207,61 +207,65 @@ export default function MyCellar({ navigation, route }: Props) {
                     resizeMode="cover"
                   />
                   <Text style={styles.modalTitle}>{selectedWine.name}</Text>
-                  <Text>{selectedWine.producer || "Unknown Producer"}</Text>
-                  <Text>
-                    {selectedWine.region
-                      ? `${selectedWine.region}, ${selectedWine.country}`
-                      : selectedWine.country}
-                  </Text>
-                  <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
-                  <Text>Type: {selectedWine.type}</Text>
 
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate("WineForm", { wine: selectedWine });
-                  }}
-                >
-                  <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Winery:</Text>
+                    <Text style={styles.detailValue}>{selectedWine.winery || "—"}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Country:</Text>
+                    <Text style={styles.detailValue}>{selectedWine.country}</Text>
+                  </View>
+                  {selectedWine.region ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Region:</Text>
+                      <Text style={styles.detailValue}>{selectedWine.region}</Text>
+                    </View>
+                  ) : null}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Vintage:</Text>
+                    <Text style={styles.detailValue}>{selectedWine.vintage ?? "—"}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Type:</Text>
+                    <Text style={styles.detailValue}>{selectedWine.type}</Text>
+                  </View>
+                  {selectedWine.amount != null ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Amount:</Text>
+                      <Text style={styles.detailValue}>{selectedWine.amount} bottle{selectedWine.amount !== 1 ? "s" : ""}</Text>
+                    </View>
+                  ) : null}
+                  {selectedWine.grapes ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Grapes:</Text>
+                      <Text style={styles.detailValue}>{selectedWine.grapes}</Text>
+                    </View>
+                  ) : null}
+                  {selectedWine.notes ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Notes:</Text>
+                      <Text style={styles.detailValue}>{selectedWine.notes}</Text>
+                    </View>
+                  ) : null}
 
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => {
-                    Alert.alert(
-                      "Delete Wine",
-                      `Are you sure you want to remove "${selectedWine.name}" from your cellar?`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: async () => {
-                            try {
-                              await wineApi.deleteWine(selectedWine.id);
-                              setModalVisible(false);
-                              setSelectedWine(null);
-                              fetchWines();
-                            } catch (err) {
-                              Alert.alert("Error", "Failed to delete wine");
-                            }
-                          },
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={styles.deleteText}>Delete</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.closeText}>Close</Text>
-                </TouchableOpacity>
-              </ScrollView>
+                  {(selectedWine.drinkWindow || selectedWine.marketValue) ? (
+                    <>
+                      <Text style={styles.modalSubtitle}>AI Insights</Text>
+                      <View style={styles.aiBoxContainer}>
+                        <View style={styles.aiBox}>
+                          <Text style={styles.aiLabel}>Drink Window</Text>
+                          <Text style={styles.aiValue}>{selectedWine.drinkWindow ?? "—"}</Text>
+                        </View>
+                        <View style={styles.aiBox}>
+                          <Text style={styles.aiLabel}>Market Value</Text>
+                          <Text style={styles.aiValue}>{selectedWine.marketValue ?? "—"}</Text>
+                        </View>
+                      </View>
+                    </>
+                  ) : null}
+                </ScrollView>
+              </>
             )}
           </View>
         </View>
@@ -414,28 +418,19 @@ const styles = StyleSheet.create({
   },
   aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
   aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
-  editButton: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: "#2575fc",
-    borderRadius: 8,
-    alignItems: "center",
+  detailRow: {
+    flexDirection: "row",
+    marginBottom: 6,
   },
-  editText: { color: "#fff", fontWeight: "bold" },
-  deleteButton: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: "#b71c1c",
-    borderRadius: 8,
-    alignItems: "center",
+  detailLabel: {
+    fontWeight: "bold",
+    color: "#555",
+    width: 80,
+    fontSize: 14,
   },
-  deleteText: { color: "#fff", fontWeight: "bold" },
-  closeButton: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: "#d32f2f",
-    borderRadius: 8,
-    alignItems: "center",
+  detailValue: {
+    flex: 1,
+    fontSize: 14,
+    color: "#222",
   },
-  closeText: { color: "#fff", fontWeight: "bold" },
 });

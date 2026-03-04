@@ -20,15 +20,17 @@ router.post(
         imageUrl = await uploadImageToS3(req.file);
       }
 
-      const { name, country, region, producer, vintage, type, notes } = req.body;
+      const { name, country, region, winery, vintage, type, notes, amount, grapes } = req.body;
 
       const created = await prisma.wine.create({
         data: {
           name,
           country,
           region: region?.trim() || null,
-          producer: producer?.trim() || null,
+          winery: winery?.trim() || null,
           vintage: vintage ?? null,
+          amount: amount ?? null,
+          grapes: grapes?.trim() || null,
           type: type as any,
           imageUrl: imageUrl || null,
           notes: notes?.trim() || null,
@@ -45,7 +47,7 @@ router.post(
             name: created.name,
             country: created.country,
             region: created.region ?? null,
-            producer: created.producer ?? null,
+            winery: created.winery ?? null,
             vintage: created.vintage as number,
             type: created.type as string,
           });
@@ -104,7 +106,7 @@ router.put(
         imageUrl = await uploadImageToS3(req.file);
       }
 
-      const { name, country, region, producer, vintage, type, notes } = req.body;
+      const { name, country, region, winery, vintage, type, notes, amount, grapes } = req.body;
 
       let updated = await prisma.wine.update({
         where: { id },
@@ -112,8 +114,10 @@ router.put(
           name,
           country,
           region: region?.trim() || null,
-          producer: producer?.trim() || null,
+          winery: winery?.trim() || null,
           vintage: vintage ?? null,
+          amount: amount ?? null,
+          grapes: grapes?.trim() || null,
           type: type as any,
           imageUrl,
           notes: notes?.trim() || null,
@@ -126,7 +130,7 @@ router.put(
             name: updated.name,
             country: updated.country,
             region: updated.region ?? null,
-            producer: updated.producer ?? null,
+            winery: updated.winery ?? null,
             vintage: updated.vintage as number,
             type: updated.type as string,
           });

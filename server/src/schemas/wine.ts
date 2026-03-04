@@ -16,10 +16,15 @@ export const wineBodySchema = z.object({
       errorMap: () => ({ message: "Invalid wine type" }),
     })),
   region: z.string().optional(),
-  producer: z.string().optional(),
+  winery: z.string().optional(),
   vintage: z
     .union([z.literal(""), z.coerce.number().int().min(1800).max(2100)])
     .optional()
     .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  amount: z
+    .union([z.literal(""), z.coerce.number().int().min(0)])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  grapes: z.string().optional(),
   notes: z.string().optional(),
 });
