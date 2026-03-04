@@ -6,8 +6,13 @@ export default function PairingScreen() {
   const [food, setFood] = useState("");
   const [suggestion, setSuggestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function getPairing() {
+    if (!food.trim()) {
+      setError("Please enter a dish name");
+      return;
+    }
     try {
       setLoading(true);
       setSuggestion("");
@@ -24,11 +29,12 @@ export default function PairingScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>🍽️ Wine Pairing</Text>
       <TextInput
-        style={styles.input}
-        placeholder="Enter a dish (e.g., steak)"
+        style={[styles.input, error ? styles.inputError : null]}
+        placeholder="Enter a dish (e.g., steak) *"
         value={food}
-        onChangeText={setFood}
+        onChangeText={(v) => { setFood(v); setError(""); }}
       />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {loading ? (
         <ActivityIndicator color="#2575fc" />
       ) : (
@@ -49,5 +55,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
+  inputError: { borderColor: "#d32f2f" },
+  errorText: { color: "#d32f2f", fontSize: 12, marginBottom: 8, marginTop: -6 },
   result: { marginTop: 20, fontSize: 16, fontStyle: "italic", textAlign: "center" },
 });

@@ -3,10 +3,12 @@ import prisma from "../prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { registerSchema, loginSchema } from "../schemas/auth";
 
 const router = Router();
 
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   const { email, password, name } = req.body;
   try {
     const exists = await prisma.user.findUnique({ where: { email } });
@@ -24,7 +26,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return res.status(401).json({ error: "Invalid credentials" });

@@ -1,11 +1,13 @@
 import { Router } from "express";
 import prisma from "../prisma";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
+import { validate } from "../middleware/validate";
+import { analyzeSchema, pairingSchema } from "../schemas/ai";
 import { aiPairingForFood, aiAnalyzeWine } from "../services/aiService";
 
 const router = Router();
 
-router.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => {
+router.post("/wines/analyze", authenticateJWT, validate(analyzeSchema), async (req: AuthRequest, res) => {
   try {
     const { wineId } = req.body;
     const wine = await prisma.wine.findUnique({ where: { id: wineId } });
@@ -39,7 +41,7 @@ router.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => 
   }
 });
 
-router.post("/ai/pairing", async (req, res) => {
+router.post("/ai/pairing", validate(pairingSchema), async (req, res) => {
   try {
     const { food } = req.body;
     const suggestion = await aiPairingForFood(food);

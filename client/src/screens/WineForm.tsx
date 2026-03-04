@@ -34,6 +34,7 @@ export default function WineForm() {
   const [notes, setNotes] = useState(editingWine?.notes ?? "");
   const [image, setImage] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const wineTypes: WineTypeItem[] = [
     { label: "🍷 Red", value: "RED", color: "#b71c1c" },
@@ -53,7 +54,32 @@ export default function WineForm() {
     }
   }
 
+  function clearError(field: string) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function validate(): boolean {
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = "Wine name is required";
+    if (!country.trim()) next.country = "Country is required";
+    if (!type) next.type = "Wine type is required";
+    if (vintage) {
+      const v = parseInt(vintage, 10);
+      if (isNaN(v) || v < 1800 || v > 2100) {
+        next.vintage = "Vintage must be a year between 1800 and 2100";
+      }
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
   async function handleSubmit() {
+    if (!validate()) return;
     try {
       setLoading(true);
 
@@ -111,17 +137,19 @@ export default function WineForm() {
     <View style={styles.container}>
       <Text style={styles.title}>{isEditing ? "Edit Wine 🍷" : "Add a Wine 🍷"}</Text>
       <TextInput
-        style={styles.input}
-        placeholder="Name"
+        style={[styles.input, errors.name && styles.inputError]}
+        placeholder="Name *"
         value={name}
-        onChangeText={setName}
+        onChangeText={(v) => { setName(v); clearError("name"); }}
       />
+      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
       <TextInput
-        style={styles.input}
-        placeholder="Country"
+        style={[styles.input, errors.country && styles.inputError]}
+        placeholder="Country *"
         value={country}
-        onChangeText={setCountry}
+        onChangeText={(v) => { setCountry(v); clearError("country"); }}
       />
+      {errors.country ? <Text style={styles.errorText}>{errors.country}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Region"
@@ -135,24 +163,26 @@ export default function WineForm() {
         onChangeText={setProducer}
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.vintage && styles.inputError]}
         placeholder="Vintage (year)"
         keyboardType="numeric"
         value={vintage}
-        onChangeText={setVintage}
+        onChangeText={(v) => { setVintage(v); clearError("vintage"); }}
       />
+      {errors.vintage ? <Text style={styles.errorText}>{errors.vintage}</Text> : null}
 
-      <Text style={styles.label}>Type</Text>
+      <Text style={styles.label}>Type *</Text>
       <Dropdown
-        style={styles.dropdown}
+        style={[styles.dropdown, errors.type && styles.inputError]}
         data={wineTypes}
         labelField="label"
         valueField="value"
         placeholder="Select type..."
         value={type}
-        onChange={(item: WineTypeItem) => setType(item.value)}
+        onChange={(item: WineTypeItem) => { setType(item.value); clearError("type"); }}
         renderItem={renderItem}
       />
+      {errors.type ? <Text style={styles.errorText}>{errors.type}</Text> : null}
 
       <TextInput
         style={[styles.input, { height: 80 }]}
@@ -219,6 +249,8 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     marginRight: 8,
   },
+  inputError: { borderColor: "#d32f2f" },
+  errorText: { color: "#d32f2f", fontSize: 12, marginBottom: 8, marginTop: -6 },
   imagePicker: {
     backgroundColor: "#2980b9",
     padding: 10,
