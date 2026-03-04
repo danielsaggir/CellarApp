@@ -208,62 +208,21 @@ export default function MyCellar({ navigation, route }: Props) {
                   />
                   <Text style={styles.modalTitle}>{selectedWine.name}</Text>
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Winery:</Text>
-                    <Text style={styles.detailValue}>{selectedWine.winery || "—"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Country:</Text>
-                    <Text style={styles.detailValue}>{selectedWine.country}</Text>
-                  </View>
-                  {selectedWine.region ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Region:</Text>
-                      <Text style={styles.detailValue}>{selectedWine.region}</Text>
+                  <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
+                  <View style={styles.aiBoxContainer}>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Drink Window</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.drinkWindow || "N/A"}
+                      </Text>
                     </View>
-                  ) : null}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Vintage:</Text>
-                    <Text style={styles.detailValue}>{selectedWine.vintage ?? "—"}</Text>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Market Value</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.marketValue || "N/A"}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Type:</Text>
-                    <Text style={styles.detailValue}>{selectedWine.type}</Text>
-                  </View>
-                  {selectedWine.amount != null ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Amount:</Text>
-                      <Text style={styles.detailValue}>{selectedWine.amount} bottle{selectedWine.amount !== 1 ? "s" : ""}</Text>
-                    </View>
-                  ) : null}
-                  {selectedWine.grapes ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Grapes:</Text>
-                      <Text style={styles.detailValue}>{selectedWine.grapes}</Text>
-                    </View>
-                  ) : null}
-                  {selectedWine.notes ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Notes:</Text>
-                      <Text style={styles.detailValue}>{selectedWine.notes}</Text>
-                    </View>
-                  ) : null}
-
-                  {(selectedWine.drinkWindow || selectedWine.marketValue) ? (
-                    <>
-                      <Text style={styles.modalSubtitle}>AI Insights</Text>
-                      <View style={styles.aiBoxContainer}>
-                        <View style={styles.aiBox}>
-                          <Text style={styles.aiLabel}>Drink Window</Text>
-                          <Text style={styles.aiValue}>{selectedWine.drinkWindow ?? "—"}</Text>
-                        </View>
-                        <View style={styles.aiBox}>
-                          <Text style={styles.aiLabel}>Market Value</Text>
-                          <Text style={styles.aiValue}>{selectedWine.marketValue ?? "—"}</Text>
-                        </View>
-                      </View>
-                    </>
-                  ) : null}
                 </ScrollView>
               </>
             )}
@@ -418,19 +377,4 @@ const styles = StyleSheet.create({
   },
   aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
   aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
-  detailRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  detailLabel: {
-    fontWeight: "bold",
-    color: "#555",
-    width: 80,
-    fontSize: 14,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: 14,
-    color: "#222",
-  },
 });
