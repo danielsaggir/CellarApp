@@ -12,8 +12,10 @@ export type Wine = {
   name: string;
   country: string;
   region?: string | null;
-  producer?: string | null;
+  winery?: string | null;
   vintage: number | null;
+  amount?: number | null;
+  grapes?: string | null;
   type: string;
   imageUrl?: string | null;
   notes?: string | null;

@@ -207,14 +207,6 @@ export default function MyCellar({ navigation, route }: Props) {
                     resizeMode="cover"
                   />
                   <Text style={styles.modalTitle}>{selectedWine.name}</Text>
-                  <Text>{selectedWine.producer || "Unknown Producer"}</Text>
-                  <Text>
-                    {selectedWine.region
-                      ? `${selectedWine.region}, ${selectedWine.country}`
-                      : selectedWine.country}
-                  </Text>
-                  <Text>Vintage: {selectedWine.vintage ?? "-"}</Text>
-                  <Text>Type: {selectedWine.type}</Text>
 
                   <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
                   <View style={styles.aiBoxContainer}>
