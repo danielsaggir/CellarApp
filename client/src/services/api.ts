@@ -81,6 +81,22 @@ export const wineApi = {
       body: formData,
     });
   },
+
+  async scanLabel(formData: FormData): Promise<{
+    name: string | null;
+    country: string | null;
+    region: string | null;
+    producer: string | null;
+    vintage: number | null;
+    type: string | null;
+  }> {
+    const auth = await getAuthHeaders();
+    return apiFetch("/wines/scan-label", {
+      method: "POST",
+      headers: auth,
+      body: formData,
+    });
+  },
 };
 
 export const aiApi = {

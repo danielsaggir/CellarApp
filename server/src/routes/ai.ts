@@ -1,7 +1,8 @@
 import { Router } from "express";
 import prisma from "../prisma";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
-import { aiPairingForFood, aiAnalyzeWine } from "../services/aiService";
+import { upload } from "../services/s3Service";
+import { aiPairingForFood, aiAnalyzeWine, aiScanWineLabel } from "../services/aiService";
 
 const router = Router();
 
@@ -36,6 +37,21 @@ router.post("/wines/analyze", authenticateJWT, async (req: AuthRequest, res) => 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "AI analysis failed" });
+  }
+});
+
+router.post("/wines/scan-label", authenticateJWT, upload.single("image"), async (req: AuthRequest, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+    const base64 = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype || "image/jpeg";
+    const result = await aiScanWineLabel(base64, mimeType);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Label scan failed" });
   }
 });
 

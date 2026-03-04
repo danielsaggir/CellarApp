@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { launchImageLibrary, Asset } from "react-native-image-picker";
+import { launchImageLibrary, launchCamera, Asset } from "react-native-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import { RootStackParamList, WineTypeItem } from "../types";
 import { wineApi } from "../services/api";
@@ -34,6 +35,7 @@ export default function WineForm() {
   const [notes, setNotes] = useState(editingWine?.notes ?? "");
   const [image, setImage] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const wineTypes: WineTypeItem[] = [
     { label: "🍷 Red", value: "RED", color: "#b71c1c" },
@@ -50,6 +52,36 @@ export default function WineForm() {
     });
     if (result.assets && result.assets.length > 0) {
       setImage(result.assets[0]);
+    }
+  }
+
+  async function handleScanLabel() {
+    const result = await launchCamera({ mediaType: "photo", quality: 0.8 });
+    if (!result.assets || result.assets.length === 0) return;
+
+    const photo = result.assets[0];
+    setImage(photo);
+
+    try {
+      setScanning(true);
+      const formData = new FormData();
+      formData.append("image", {
+        uri: photo.uri,
+        name: photo.fileName || `scan_${Date.now()}.jpg`,
+        type: photo.type || "image/jpeg",
+      } as any);
+
+      const data = await wineApi.scanLabel(formData);
+      if (data.name) setName(data.name);
+      if (data.country) setCountry(data.country);
+      if (data.region) setRegion(data.region);
+      if (data.producer) setProducer(data.producer);
+      if (data.vintage) setVintage(String(data.vintage));
+      if (data.type) setType(data.type);
+    } catch (err: any) {
+      Alert.alert("Scan Failed", err.message || "Could not read the label. Please fill in manually.");
+    } finally {
+      setScanning(false);
     }
   }
 
@@ -110,6 +142,19 @@ export default function WineForm() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isEditing ? "Edit Wine 🍷" : "Add a Wine 🍷"}</Text>
+      {!isEditing && (
+        <TouchableOpacity
+          style={styles.scanButton}
+          onPress={handleScanLabel}
+          disabled={scanning}
+        >
+          {scanning ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.scanButtonText}>📷 Scan Wine Label</Text>
+          )}
+        </TouchableOpacity>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Name"
@@ -190,6 +235,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
+  scanButton: {
+    backgroundColor: "#00897b",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  scanButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
