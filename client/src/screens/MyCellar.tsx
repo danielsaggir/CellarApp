@@ -218,98 +218,20 @@ export default function MyCellar({ navigation, route }: Props) {
                   />
                   <Text style={styles.modalTitle}>{selectedWine.name}</Text>
 
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Winery</Text>
-                    <Text style={styles.detailValue}>{selectedWine.winery || "---"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Country</Text>
-                    <Text style={styles.detailValue}>{selectedWine.country}</Text>
-                  </View>
-                  {selectedWine.region ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Region</Text>
-                      <Text style={styles.detailValue}>{selectedWine.region}</Text>
-                    </View>
-                  ) : null}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Vintage</Text>
-                    <Text style={styles.detailValue}>{selectedWine.vintage ?? "---"}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Type</Text>
-                    <Text style={styles.detailValue}>{selectedWine.type}</Text>
-                  </View>
-                  {selectedWine.amount != null ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Amount</Text>
-                      <Text style={styles.detailValue}>
-                        {selectedWine.amount} bottle{selectedWine.amount !== 1 ? "s" : ""}
+                  <Text style={styles.modalSubtitle}>🍷 AI Insights:</Text>
+                  <View style={styles.aiBoxContainer}>
+                    <View style={styles.aiBox}>
+                      <Text style={styles.aiLabel}>Drink Window</Text>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.drinkWindow || "N/A"}
                       </Text>
                     </View>
-                  ) : null}
-                  {selectedWine.grapes ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Grapes</Text>
-                      <Text style={styles.detailValue}>{selectedWine.grapes}</Text>
-                    </View>
-                  ) : null}
-                  {selectedWine.notes ? (
-                    <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Notes</Text>
-                      <Text style={styles.detailValue}>{selectedWine.notes}</Text>
-                    </View>
-                  ) : null}
-
-                  <Text style={styles.modalSubtitle}>AI Insights</Text>
-                  <Text style={styles.insightHint}>Tap a value to edit</Text>
-                  <View style={styles.aiBoxContainer}>
-                    <TouchableOpacity
-                      style={styles.aiBox}
-                      onPress={() => setEditingInsight("drinkWindow")}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.aiLabel}>Drink Window</Text>
-                      {editingInsight === "drinkWindow" ? (
-                        <TextInput
-                          style={styles.aiInput}
-                          value={editDrinkWindow}
-                          onChangeText={setEditDrinkWindow}
-                          onBlur={() => saveInsight("drinkWindow")}
-                          onSubmitEditing={() => saveInsight("drinkWindow")}
-                          autoFocus
-                          placeholder="e.g. 2020-2028"
-                          placeholderTextColor={colors.textSecondary}
-                        />
-                      ) : (
-                        <Text style={styles.aiValue}>
-                          {savingInsight ? "..." : (selectedWine.drinkWindow || "---")}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.aiBox}
-                      onPress={() => setEditingInsight("marketValue")}
-                      activeOpacity={0.7}
-                    >
+                    <View style={styles.aiBox}>
                       <Text style={styles.aiLabel}>Market Value</Text>
-                      {editingInsight === "marketValue" ? (
-                        <TextInput
-                          style={styles.aiInput}
-                          value={editMarketValue}
-                          onChangeText={setEditMarketValue}
-                          onBlur={() => saveInsight("marketValue")}
-                          onSubmitEditing={() => saveInsight("marketValue")}
-                          autoFocus
-                          placeholder="e.g. $45"
-                          placeholderTextColor={colors.textSecondary}
-                        />
-                      ) : (
-                        <Text style={styles.aiValue}>
-                          {savingInsight ? "..." : (selectedWine.marketValue || "---")}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
+                      <Text style={styles.aiValue}>
+                        {selectedWine.marketValue || "N/A"}
+                      </Text>
+                    </View>
                   </View>
                 </ScrollView>
               </>
@@ -448,29 +370,12 @@ const styles = StyleSheet.create({
   aiBoxContainer: { flexDirection: "row", justifyContent: "space-between", marginTop: spacing.sm, gap: spacing.sm },
   aiBox: {
     flex: 1,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: radii.sm,
-    padding: spacing.sm,
+    backgroundColor: "#f4f6f8",
+    borderRadius: 8,
+    padding: 10,
+    marginHorizontal: 5,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  aiLabel: { fontSize: fontSizes.small, color: colors.textSecondary, marginBottom: spacing.xs },
-  aiValue: { fontSize: fontSizes.body, fontWeight: "bold", color: colors.primary },
-  aiInput: {
-    fontSize: fontSizes.body,
-    fontWeight: "bold",
-    color: colors.primary,
-    textAlign: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primary,
-    padding: 0,
-    minWidth: 80,
-  },
-  insightHint: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontStyle: "italic",
-    marginTop: spacing.xs,
-  },
+  aiLabel: { fontSize: 12, color: "#555", marginBottom: 4 },
+  aiValue: { fontSize: 14, fontWeight: "bold", color: "#222" },
 });

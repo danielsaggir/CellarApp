@@ -90,28 +90,20 @@ export const wineApi = {
     });
   },
 
-  async scanLabel(formData: FormData): Promise<ScannedWine> {
+  async scanLabel(formData: FormData): Promise<{
+    name: string | null;
+    country: string | null;
+    region: string | null;
+    winery: string | null;
+    vintage: number | null;
+    type: string | null;
+    grapes: string | null;
+  }> {
     const auth = await getAuthHeaders();
     return apiFetch("/wines/scan-label", {
       method: "POST",
       headers: auth,
       body: formData,
-    });
-  },
-
-  async previewInsights(data: {
-    name: string;
-    country: string;
-    type: string;
-    region?: string;
-    winery?: string;
-    vintage?: number;
-  }): Promise<WineInsights> {
-    const auth = await getAuthHeaders();
-    return apiFetch("/wines/preview-insights", {
-      method: "POST",
-      headers: { ...auth, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
     });
   },
 };

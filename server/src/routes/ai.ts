@@ -2,7 +2,7 @@ import { Router } from "express";
 import prisma from "../prisma";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
 import { validate } from "../middleware/validate";
-import { analyzeSchema, pairingSchema, previewInsightsSchema } from "../schemas/ai";
+import { analyzeSchema, pairingSchema } from "../schemas/ai";
 import { aiPairingForFood, aiAnalyzeWine, aiScanWineLabel } from "../services/aiService";
 import { upload } from "../services/s3Service";
 
@@ -54,24 +54,6 @@ router.post("/wines/scan-label", authenticateJWT, upload.single("image"), async 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to scan wine label" });
-  }
-});
-
-router.post("/wines/preview-insights", authenticateJWT, validate(previewInsightsSchema), async (req: AuthRequest, res) => {
-  try {
-    const { name, country, type, region, winery, vintage } = req.body;
-    const analysis = await aiAnalyzeWine({
-      name,
-      country,
-      region: region || null,
-      winery: winery || null,
-      vintage,
-      type,
-    });
-    res.json(analysis);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "AI preview insights failed" });
   }
 });
 

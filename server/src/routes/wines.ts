@@ -20,8 +20,7 @@ router.post(
         imageUrl = await uploadImageToS3(req.file);
       }
 
-      const { name, country, region, winery, vintage, type, notes, amount, grapes, drinkWindow, marketValue } = req.body;
-      const userProvidedInsights = !!(drinkWindow || marketValue);
+      const { name, country, region, winery, vintage, type, notes, amount, grapes } = req.body;
 
       const created = await prisma.wine.create({
         data: {
@@ -42,28 +41,24 @@ router.post(
       });
 
       let finalWine = created;
-      if (!userProvidedInsights) {
-        try {
-          if (created.vintage !== null && created.vintage !== undefined) {
-            const analysis = await aiAnalyzeWine({
-              name: created.name,
-              country: created.country,
-              region: created.region ?? null,
-              winery: created.winery ?? null,
-              vintage: created.vintage as number,
-              type: created.type as string,
-            });
+      try {
+        if (created.vintage !== null && created.vintage !== undefined) {
+          const analysis = await aiAnalyzeWine({
+            name: created.name,
+            country: created.country,
+            region: created.region ?? null,
+            winery: created.winery ?? null,
+            vintage: created.vintage as number,
+            type: created.type as string,
+          });
 
-            finalWine = await prisma.wine.update({
-              where: { id: created.id },
-              data: {
-                drinkWindow: analysis.drinkWindow || null,
-                marketValue: analysis.marketValue || null,
-              },
-            });
-          }
-        } catch (aiErr) {
-          console.warn("AI enrichment failed on create. Keeping nulls.", aiErr);
+          finalWine = await prisma.wine.update({
+            where: { id: created.id },
+            data: {
+              drinkWindow: analysis.drinkWindow || null,
+              marketValue: analysis.marketValue || null,
+            },
+          });
         }
       }
 
@@ -109,8 +104,7 @@ router.put(
         imageUrl = await uploadImageToS3(req.file);
       }
 
-      const { name, country, region, winery, vintage, type, notes, amount, grapes, drinkWindow, marketValue } = req.body;
-      const userProvidedInsights = !!(drinkWindow || marketValue);
+      const { name, country, region, winery, vintage, type, notes, amount, grapes } = req.body;
 
       let updated = await prisma.wine.update({
         where: { id },
@@ -130,28 +124,24 @@ router.put(
         },
       });
 
-      if (!userProvidedInsights) {
-        try {
-          if (updated.vintage !== null && updated.vintage !== undefined) {
-            const analysis = await aiAnalyzeWine({
-              name: updated.name,
-              country: updated.country,
-              region: updated.region ?? null,
-              winery: updated.winery ?? null,
-              vintage: updated.vintage as number,
-              type: updated.type as string,
-            });
+      try {
+        if (updated.vintage !== null && updated.vintage !== undefined) {
+          const analysis = await aiAnalyzeWine({
+            name: updated.name,
+            country: updated.country,
+            region: updated.region ?? null,
+            winery: updated.winery ?? null,
+            vintage: updated.vintage as number,
+            type: updated.type as string,
+          });
 
-            updated = await prisma.wine.update({
-              where: { id },
-              data: {
-                drinkWindow: analysis.drinkWindow || null,
-                marketValue: analysis.marketValue || null,
-              },
-            });
-          }
-        } catch (aiErr) {
-          console.warn("AI enrichment failed on update. Keeping previous values.", aiErr);
+          updated = await prisma.wine.update({
+            where: { id },
+            data: {
+              drinkWindow: analysis.drinkWindow || null,
+              marketValue: analysis.marketValue || null,
+            },
+          });
         }
       }
 

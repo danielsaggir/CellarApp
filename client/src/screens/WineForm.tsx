@@ -10,8 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  Modal,
-  Animated,
 } from "react-native";
 import { launchImageLibrary, launchCamera, Asset } from "react-native-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
@@ -169,6 +167,12 @@ export default function WineForm() {
       const a = parseInt(amount, 10);
       if (isNaN(a) || a < 0) next.amount = "Amount must be a positive number";
     }
+    if (amount) {
+      const a = parseInt(amount, 10);
+      if (isNaN(a) || a < 0) {
+        next.amount = "Amount must be a positive number";
+      }
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -177,6 +181,7 @@ export default function WineForm() {
     try {
       const result = await launchCamera({ mediaType: "photo", quality: 0.8 });
       if (!result.assets || result.assets.length === 0) return;
+
       const asset = result.assets[0];
       if (!asset.uri) return;
 
@@ -189,93 +194,17 @@ export default function WineForm() {
       } as any);
 
       const scanned = await wineApi.scanLabel(formData);
-
-      setScanAsset(asset);
-      setScanResult(scanned);
-      setPreviewAmount("1");
-      setPreviewInsights(null);
-      setPreviewDrinkWindow("");
-      setPreviewMarketValue("");
-      setShowScanPreview(true);
-
-      if (hasAnyData(scanned)) {
-        fetchPreviewInsights(scanned);
-      }
+      if (scanned.name) setName(scanned.name);
+      if (scanned.country) setCountry(scanned.country);
+      if (scanned.region) setRegion(scanned.region);
+      if (scanned.winery) setWinery(scanned.winery);
+      if (scanned.vintage) setVintage(String(scanned.vintage));
+      if (scanned.type) setType(scanned.type);
+      if (scanned.grapes) setGrapes(scanned.grapes);
     } catch (err: any) {
       Alert.alert("Scan Failed", err.message || "Could not scan the wine label");
     } finally {
       setScanning(false);
-    }
-  }
-
-  function dismissScan() {
-    setShowScanPreview(false);
-    setScanResult(null);
-    setScanAsset(null);
-    setPreviewInsights(null);
-  }
-
-  function handleFillDetails() {
-    if (scanResult) {
-      if (scanResult.name) setName(scanResult.name);
-      if (scanResult.country) setCountry(scanResult.country);
-      if (scanResult.region) setRegion(scanResult.region);
-      if (scanResult.winery) setWinery(scanResult.winery);
-      if (scanResult.vintage) setVintage(String(scanResult.vintage));
-      if (scanResult.type) setType(scanResult.type);
-      if (scanResult.grapes) setGrapes(scanResult.grapes);
-    }
-    if (previewDrinkWindow) setDrinkWindow(previewDrinkWindow);
-    if (previewMarketValue) setMarketValue(previewMarketValue);
-    if (previewAmount) setAmount(previewAmount);
-    if (scanAsset) setImage(scanAsset);
-    setShowScanPreview(false);
-    setScanResult(null);
-    setScanAsset(null);
-    setPreviewInsights(null);
-  }
-
-  function handleFillManually() {
-    if (scanAsset) setImage(scanAsset);
-    setShowScanPreview(false);
-    setScanResult(null);
-    setScanAsset(null);
-    setPreviewInsights(null);
-  }
-
-  async function handleMatch() {
-    if (!scanResult || !scanAsset) return;
-    try {
-      setMatchLoading(true);
-      const formData = new FormData();
-      formData.append("name", scanResult.name!);
-      formData.append("country", scanResult.country!);
-      formData.append("type", scanResult.type!);
-      if (scanResult.region) formData.append("region", scanResult.region);
-      if (scanResult.winery) formData.append("winery", scanResult.winery);
-      if (scanResult.vintage) formData.append("vintage", String(scanResult.vintage));
-      if (scanResult.grapes) formData.append("grapes", scanResult.grapes);
-      if (previewAmount) formData.append("amount", previewAmount);
-      if (previewDrinkWindow) formData.append("drinkWindow", previewDrinkWindow);
-      if (previewMarketValue) formData.append("marketValue", previewMarketValue);
-
-      formData.append("image", {
-        uri: scanAsset.uri,
-        name: scanAsset.fileName || `scan_${Date.now()}.jpg`,
-        type: scanAsset.type || "image/jpeg",
-      } as any);
-
-      await wineApi.createWine(formData);
-      setShowScanPreview(false);
-      setScanResult(null);
-      setScanAsset(null);
-      setPreviewInsights(null);
-      Alert.alert("Success", "Wine added to your cellar!");
-      navigation.goBack();
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "Failed to add wine");
-    } finally {
-      setMatchLoading(false);
     }
   }
 
@@ -313,6 +242,16 @@ export default function WineForm() {
       }
 
       navigation.goBack();
+      setName("");
+      setCountry("");
+      setRegion("");
+      setWinery("");
+      setVintage("");
+      setType("");
+      setAmount("");
+      setGrapes("");
+      setNotes("");
+      setImage(null);
     } catch (err: any) {
       Alert.alert("Error", err.message || "Failed to save wine");
     } finally {
@@ -500,168 +439,130 @@ export default function WineForm() {
   }
 
   return (
-    <View style={styles.screen}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{isEditing ? "Edit Wine" : "Add a Wine"}</Text>
-
-        {!isEditing && (
-          <TouchableOpacity style={styles.scanButton} onPress={handleScanLabel} disabled={scanning}>
-            {scanning ? (
-              <ActivityIndicator color={colors.background} size="small" />
-            ) : (
-              <Text style={styles.scanButtonText}>Scan Wine Label</Text>
-            )}
-          </TouchableOpacity>
-        )}
-
-        <Text style={styles.label}>Wine Name *</Text>
-        <TextInput
-          style={[styles.input, errors.name && styles.inputError]}
-          placeholder="e.g. Chateau Margaux"
-          placeholderTextColor={colors.textSecondary}
-          value={name}
-          onChangeText={(v) => { setName(v); clearError("name"); }}
-        />
-        {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
-
-        <Text style={styles.label}>Country of Origin *</Text>
-        <TextInput
-          style={[styles.input, errors.country && styles.inputError]}
-          placeholder="e.g. France"
-          placeholderTextColor={colors.textSecondary}
-          value={country}
-          onChangeText={(v) => { setCountry(v); clearError("country"); }}
-        />
-        {errors.country ? <Text style={styles.errorText}>{errors.country}</Text> : null}
-
-        <Text style={styles.label}>Region</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Bordeaux, Napa Valley"
-          placeholderTextColor={colors.textSecondary}
-          value={region}
-          onChangeText={setRegion}
-        />
-
-        <Text style={styles.label}>Winery</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Domaine de la Romanee-Conti"
-          placeholderTextColor={colors.textSecondary}
-          value={winery}
-          onChangeText={setWinery}
-        />
-
-        <Text style={styles.label}>Vintage (year)</Text>
-        <TextInput
-          style={[styles.input, errors.vintage && styles.inputError]}
-          placeholder="e.g. 2018"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
-          value={vintage}
-          onChangeText={(v) => { setVintage(v); clearError("vintage"); }}
-        />
-        {errors.vintage ? <Text style={styles.errorText}>{errors.vintage}</Text> : null}
-
-        <Text style={styles.label}>Wine Type *</Text>
-        <Dropdown
-          style={[styles.dropdown, errors.type && styles.inputError]}
-          containerStyle={{ backgroundColor: colors.surface, borderColor: colors.border }}
-          itemTextStyle={{ color: colors.text }}
-          selectedTextStyle={{ color: colors.text }}
-          placeholderStyle={{ color: colors.textSecondary }}
-          activeColor={colors.surfaceLight}
-          data={wineTypes}
-          labelField="label"
-          valueField="value"
-          placeholder="Select type..."
-          value={type}
-          onChange={(item: WineTypeItem) => { setType(item.value); clearError("type"); }}
-          renderItem={renderDropdownItem}
-        />
-        {errors.type ? <Text style={styles.errorText}>{errors.type}</Text> : null}
-
-        <Text style={styles.label}>Amount (bottles)</Text>
-        <TextInput
-          style={[styles.input, errors.amount && styles.inputError]}
-          placeholder="e.g. 6"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={(v) => { setAmount(v); clearError("amount"); }}
-        />
-        {errors.amount ? <Text style={styles.errorText}>{errors.amount}</Text> : null}
-
-        <Text style={styles.label}>Grape Varieties</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Cabernet Sauvignon, Merlot"
-          placeholderTextColor={colors.textSecondary}
-          value={grapes}
-          onChangeText={setGrapes}
-        />
-
-        <Text style={styles.label}>Personal Notes</Text>
-        <TextInput
-          style={[styles.input, { height: 80, textAlignVertical: "top" }]}
-          placeholder="Your tasting notes, thoughts..."
-          placeholderTextColor={colors.textSecondary}
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-        />
-
-        {isEditing && (
-          <>
-            <Text style={[styles.label, { marginTop: spacing.md }]}>AI Insights</Text>
-            <Text style={styles.sublabel}>Drink Window</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 2020-2028"
-              placeholderTextColor={colors.textSecondary}
-              value={drinkWindow}
-              onChangeText={setDrinkWindow}
-            />
-            <Text style={styles.sublabel}>Market Value</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. $45"
-              placeholderTextColor={colors.textSecondary}
-              value={marketValue}
-              onChangeText={setMarketValue}
-            />
-          </>
-        )}
-
-        <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-          <Text style={styles.imagePickerText}>{image ? "Change Image" : "Pick an Image"}</Text>
-        </TouchableOpacity>
-        {image?.uri ? (
-          <Image source={{ uri: image.uri }} style={styles.preview} />
-        ) : isEditing && editingWine?.imageUrl ? (
-          <Image source={{ uri: editingWine.imageUrl }} style={styles.preview} />
-        ) : null}
-
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color={colors.background} size="small" />
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Text style={styles.title}>{isEditing ? "Edit Wine 🍷" : "Add a Wine 🍷"}</Text>
+      {!isEditing && (
+        <TouchableOpacity
+          style={styles.scanButton}
+          onPress={handleScanLabel}
+          disabled={scanning}
+        >
+          {scanning ? (
+            <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text style={styles.submitText}>
               {isEditing ? "Update Wine" : "Save Wine"}
             </Text>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      )}
+      <Text style={styles.label}>Wine Name *</Text>
+      <TextInput
+        style={[styles.input, errors.name && styles.inputError]}
+        placeholder="e.g. Château Margaux"
+        value={name}
+        onChangeText={(v) => { setName(v); clearError("name"); }}
+      />
+      {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
 
-      {renderPreviewModal()}
-    </View>
+      <Text style={styles.label}>Country of Origin *</Text>
+      <TextInput
+        style={[styles.input, errors.country && styles.inputError]}
+        placeholder="e.g. France"
+        value={country}
+        onChangeText={(v) => { setCountry(v); clearError("country"); }}
+      />
+      {errors.country ? <Text style={styles.errorText}>{errors.country}</Text> : null}
+
+      <Text style={styles.label}>Region</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. Bordeaux, Napa Valley"
+        value={region}
+        onChangeText={setRegion}
+      />
+
+      <Text style={styles.label}>Winery</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. Domaine de la Romanée-Conti"
+        value={winery}
+        onChangeText={setWinery}
+      />
+
+      <Text style={styles.label}>Vintage (year)</Text>
+      <TextInput
+        style={[styles.input, errors.vintage && styles.inputError]}
+        placeholder="e.g. 2018"
+        keyboardType="numeric"
+        value={vintage}
+        onChangeText={(v) => { setVintage(v); clearError("vintage"); }}
+      />
+      {errors.vintage ? <Text style={styles.errorText}>{errors.vintage}</Text> : null}
+
+      <Text style={styles.label}>Wine Type *</Text>
+      <Dropdown
+        style={[styles.dropdown, errors.type && styles.inputError]}
+        data={wineTypes}
+        labelField="label"
+        valueField="value"
+        placeholder="Select type..."
+        value={type}
+        onChange={(item: WineTypeItem) => { setType(item.value); clearError("type"); }}
+        renderItem={renderItem}
+      />
+      {errors.type ? <Text style={styles.errorText}>{errors.type}</Text> : null}
+
+      <Text style={styles.label}>Amount (bottles)</Text>
+      <TextInput
+        style={[styles.input, errors.amount && styles.inputError]}
+        placeholder="e.g. 6"
+        keyboardType="numeric"
+        value={amount}
+        onChangeText={(v) => { setAmount(v); clearError("amount"); }}
+      />
+      {errors.amount ? <Text style={styles.errorText}>{errors.amount}</Text> : null}
+
+      <Text style={styles.label}>Grape Varieties</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="e.g. Cabernet Sauvignon, Merlot"
+        value={grapes}
+        onChangeText={setGrapes}
+      />
+
+      <Text style={styles.label}>Personal Notes</Text>
+      <TextInput
+        style={[styles.input, { height: 80 }]}
+        placeholder="Your tasting notes, thoughts, etc."
+        value={notes}
+        onChangeText={setNotes}
+        multiline
+      />
+
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        <Text style={styles.imagePickerText}>
+          {image ? "Change Image" : "Pick an Image"}
+        </Text>
+      </TouchableOpacity>
+      {image?.uri ? (
+        <Image source={{ uri: image.uri }} style={styles.preview} />
+      ) : isEditing && editingWine?.imageUrl ? (
+        <Image source={{ uri: editingWine.imageUrl }} style={styles.preview} />
+      ) : null}
+
+      <Button
+        title={loading ? "Saving..." : isEditing ? "Update Wine" : "Save Wine"}
+        onPress={handleSubmit}
+        disabled={loading}
+      />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  contentContainer: { padding: 20, paddingBottom: 40 },
   title: {
     fontSize: fontSizes.title,
     fontWeight: "bold",
