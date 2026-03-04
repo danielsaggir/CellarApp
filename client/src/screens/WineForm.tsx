@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { launchImageLibrary, Asset } from "react-native-image-picker";
+import { launchImageLibrary, launchCamera, Asset } from "react-native-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import { RootStackParamList, WineTypeItem } from "../types";
 import { wineApi } from "../services/api";
@@ -136,6 +137,19 @@ export default function WineForm() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isEditing ? "Edit Wine 🍷" : "Add a Wine 🍷"}</Text>
+      {!isEditing && (
+        <TouchableOpacity
+          style={styles.scanButton}
+          onPress={handleScanLabel}
+          disabled={scanning}
+        >
+          {scanning ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.scanButtonText}>📷 Scan Wine Label</Text>
+          )}
+        </TouchableOpacity>
+      )}
       <TextInput
         style={[styles.input, errors.name && styles.inputError]}
         placeholder="Name *"
@@ -220,6 +234,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
+  scanButton: {
+    backgroundColor: "#00897b",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  scanButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",

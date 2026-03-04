@@ -14,6 +14,63 @@ export async function aiPairingForFood(food: string): Promise<string> {
   return response.output_text || "No suggestion found";
 }
 
+// ================== WINE LABEL SCAN (Vision) ==================
+type ScannedWine = {
+  name: string | null;
+  country: string | null;
+  region: string | null;
+  producer: string | null;
+  vintage: number | null;
+  type: string | null;
+};
+
+export async function aiScanWineLabel(imageBase64: string, mimeType: string): Promise<ScannedWine> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `You are a wine label expert. Analyze this wine bottle label image and extract as much information as possible. Return a JSON object with these fields:
+- name: the wine name
+- country: country of origin
+- region: wine region (e.g., Bordeaux, Napa Valley)
+- producer: winery or producer name
+- vintage: vintage year as a number
+- type: one of RED, WHITE, ROSE, SPARKLING, ORANGE
+
+Use null for any field you cannot determine from the label.`,
+          },
+          {
+            type: "image_url",
+            image_url: { url: `data:${mimeType};base64,${imageBase64}` },
+          },
+        ],
+      },
+    ],
+    response_format: { type: "json_object" },
+  });
+
+  let data: any;
+  try {
+    data = JSON.parse(response.choices[0].message.content || "{}");
+  } catch {
+    data = {};
+  }
+
+  const validTypes = ["RED", "WHITE", "ROSE", "SPARKLING", "ORANGE"];
+  return {
+    name: data.name || null,
+    country: data.country || null,
+    region: data.region || null,
+    producer: data.producer || null,
+    vintage: data.vintage ? Number(data.vintage) : null,
+    type: validTypes.includes(data.type) ? data.type : null,
+  };
+}
+
 // ================== WINE ENRICHMENT (Drink Window + Market Value only) ==================
 type Wine = {
   name: string;
